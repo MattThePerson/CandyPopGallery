@@ -1,4 +1,5 @@
 import './ControlBar.css';
+
 import down_arrow from './assets/down-arrow.svg'
 
 
@@ -30,9 +31,6 @@ function ControlBar() {
                     <div>list</div>
                     <div>grid</div>
                 </div>
-            </div>
-            <div className="display-container">
-
             </div>
         </div>
     )

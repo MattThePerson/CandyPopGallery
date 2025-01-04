@@ -1,6 +1,6 @@
 
 
-const flask_api_url = "http://127.0.0.1:5000/";
+export const flask_api_url = "http://127.0.0.1:5000/";
 
 // makeApiRequestGET
 export function makeApiRequestGET(request: string, args: string[], callback: Function) {
@@ -17,7 +17,7 @@ export function makeApiRequestGET(request: string, args: string[], callback: Fun
         })
         .then(data => {
             // console.log(data)
-            callback(data.main);
+            callback(data);
         })
         .catch(error => {
             console.error('Fetch error:', error);
@@ -37,7 +37,7 @@ export function makeApiRequestGET_JSON(request: string, data: any, callback: Fun
         })
         .then(data => {
             // console.log(data);
-            callback(data.main);
+            callback(data);
         })
         .catch(error => {
             console.error('Fetch error:', error);

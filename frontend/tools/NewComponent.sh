@@ -36,6 +36,7 @@ function $1() {
         </div>
     )
 }
+
 export default $1;
 EOF
     echo "Component '$1' created"

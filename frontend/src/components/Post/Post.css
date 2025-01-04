@@ -8,11 +8,13 @@
     border-radius: 10px;
     border: 1px solid #0005;
 
+    * { box-sizing: border-box; }
 
     .tag-bar {
         display: flex;
         gap: 0.3rem;
         margin: 0.2rem;
+        flex-wrap: wrap;
     }
     
     .tag {
@@ -21,4 +23,7 @@
         border-radius: 5px;
         border: 1px solid #0005;
     }
+
+    .tag.creator { background: purple; }
+    .tag.source { background: orange; }
 }

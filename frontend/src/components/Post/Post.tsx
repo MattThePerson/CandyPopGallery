@@ -1,27 +1,31 @@
 import './Post.css';
 
+// import { useState, useEffect } from 'react'
+import { flask_api_url } from '../../utils/api';
+
+import MediaComponent from '../MediaComponent';
+
 type PostProps = {
-    image: string;
+    data: any;
 }
 
-function Post({image}: PostProps) {
+function Post({data}: PostProps) {
+
+    // console.log(data);
 
     return (
         <div className="Post">
-            <h2 className="date-uploaded">12-13-2024</h2>
+            <h2 className="date-uploaded">{data['date_uploaded']} </h2>
             <div className="tag-bar upper-tag-bar">
-                <div className="tag creator">Creator123</div>
-                <div className="tag source">Twitter</div>
-                <div className="tag character">Luna Snow</div>
-                <div className="tag media">Marvel Rivals</div>
+                <div className="tag source">{data['source']} </div>
+                <div className="tag creator">{data['creator']} </div>
             </div>
             <div className="tag-bar lower-tag-bar">
-                <div className="tag general">fanart</div>
-                <div className="tag general">video game</div>
-                <div className="tag general">illustration</div>
+                {data['tags'].map((tag: string, idx: number) => <div key={"tag-" + idx} className="tag general">{tag} </div> )}
             </div>
-            <img src={image} alt="" />
+            <MediaComponent src={flask_api_url + 'get-media/' + data.src} />
         </div>
     )
 }
+
 export default Post;

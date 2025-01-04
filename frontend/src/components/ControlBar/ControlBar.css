@@ -1,12 +1,12 @@
 
 .ControlBar {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     background: rgb(4, 32, 40);
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 3%;
     width: 100%;
     height: fit-content;
-    justify-content: space-around;
-    align-items: center;
     
     * {
         display: flex;
@@ -14,19 +14,12 @@
         font-family: sans-serif;
         font-weight: bold;
         font-size: 0.9rem;
+        color: grey;
     }
 
-    /* .container:first-child::after {
-        content: '!';
-    } */
-    
     .container {
         justify-content: space-between;
         gap: 1rem;
-        /* background: green; */
-    }
-    .container > div:first-child {
-        color: grey;
     }
 
     .button {
@@ -37,9 +30,10 @@
         overflow: hidden;
         user-select: none;
     }
-
+    
     .button div {
         padding: 0.3rem 0.2rem;
+        color: white;
     }
     .button div:hover {
         background: green;
