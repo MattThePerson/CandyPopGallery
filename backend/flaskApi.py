@@ -1,113 +1,27 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import argparse
 import os
+from pathlib import Path
+from lib.json_handler import JsonHandler
+import fun.FlaskFunctions as ff
 
-
-creators = [
-    { "name": "PixelCrafter", "amount": 85 },
-    { "name": "CodeExplorer", "amount": 67 },
-    { "name": "TechSavvy101", "amount": 94 },
-    { "name": "ArtfulDodger", "amount": 75 },
-    { "name": "GadgetGuru", "amount": 50 },
-    { "name": "QuantumQuill", "amount": 88 },
-    { "name": "EpicGamer88", "amount": 60 },
-    { "name": "CryptoNerd", "amount": 73 },
-    { "name": "SpaceCadet9", "amount": 91 },
-    { "name": "FitnessFiend", "amount": 78 },
-    { "name": "ChefInTheMaking", "amount": 69 },
-    { "name": "DigitalNomad", "amount": 85 },
-    { "name": "MovieBuff42", "amount": 72 },
-    { "name": "TriviaTitan", "amount": 62 },
-    { "name": "CodeNinjaDev", "amount": 81 },
-    { "name": "NatureWalker", "amount": 74 },
-    { "name": "CatLadyExtra", "amount": 68 },
-    { "name": "DoggoLover", "amount": 90 },
-    { "name": "TravelBug99", "amount": 84 },
-    { "name": "WriterlyVibes", "amount": 70 },
-    { "name": "AIWhiz", "amount": 88 },
-    { "name": "HistoryBuff", "amount": 66 },
-    { "name": "TheGamingMonk", "amount": 77 },
-    { "name": "MusicMuse", "amount": 80 },
-    { "name": "StartupSensei", "amount": 95 },
-    { "name": "SportsGuru", "amount": 79 },
-    { "name": "EcoWarrior", "amount": 87 },
-    { "name": "PuzzlerBrain", "amount": 65 },
-    { "name": "TechWizard7", "amount": 92 },
-    { "name": "CulinaryKing", "amount": 71 },
-    { "name": "BookwormBae", "amount": 74 },
-    { "name": "DreamyDoodler", "amount": 69 },
-    { "name": "AstroLover", "amount": 83 },
-    { "name": "CodingChamp", "amount": 76 },
-    { "name": "LyricalSoul", "amount": 64 },
-    { "name": "FilmFanatic", "amount": 81 },
-    { "name": "InnovatorGuy", "amount": 90 },
-    { "name": "HealthHustler", "amount": 86 },
-    { "name": "MindfulMaven", "amount": 72 },
-    { "name": "OceanAdventurer", "amount": 94 },
-    { "name": "ChessMaster47", "amount": 68 },
-    { "name": "SocialGuru", "amount": 89 },
-    { "name": "AIProph", "amount": 82 },
-    { "name": "DesignDrip", "amount": 67 },
-    { "name": "GamerGeek25", "amount": 60 },
-    { "name": "PoetryPonder", "amount": 85 },
-    { "name": "HackyHacker", "amount": 80 },
-    { "name": "EpicExplorer", "amount": 91 },
-    { "name": "TechTrendz", "amount": 73 },
-    { "name": "CryptoSage", "amount": 88 },
-    { "name": "PhotoNerd", "amount": 66 },
-    { "name": "ArtsySoul", "amount": 77 },
-    { "name": "MusicManiac", "amount": 84 },
-    { "name": "EcoThinker", "amount": 78 },
-    { "name": "MathMindset", "amount": 64 },
-    { "name": "StartupAddict", "amount": 96 },
-    { "name": "AstroTrekker", "amount": 82 },
-    { "name": "DevOpsDude", "amount": 90 },
-    { "name": "VirtualNomad", "amount": 75 },
-    { "name": "FilmCraze", "amount": 72 },
-    { "name": "FitnessJourney", "amount": 87 },
-    { "name": "PixelPainter", "amount": 69 },
-    { "name": "CodeSamurai", "amount": 88 },
-    { "name": "GameGlitcher", "amount": 61 },
-    { "name": "TechieTrends", "amount": 93 },
-    { "name": "AIExplorer", "amount": 81 },
-    { "name": "NatureLover", "amount": 76 },
-    { "name": "CryptoSeer", "amount": 79 },
-    { "name": "TravelDreams", "amount": 85 },
-    { "name": "ZenLifeCoach", "amount": 70 },
-    { "name": "FoodieFun", "amount": 67 },
-    { "name": "HistoryHound", "amount": 64 },
-    { "name": "SpaceSeeker", "amount": 92 },
-    { "name": "CodePioneer", "amount": 89 },
-    { "name": "MindBliss", "amount": 80 },
-    { "name": "DataWhizKid", "amount": 73 },
-    { "name": "WordyGenius", "amount": 87 },
-    { "name": "AdventureAnon", "amount": 78 },
-    { "name": "MusicWhiz", "amount": 95 },
-    { "name": "CoolCoder77", "amount": 74 },
-    { "name": "HealthyGuru", "amount": 82 },
-    { "name": "EcoExplorer", "amount": 90 },
-    { "name": "TechSavants", "amount": 85 },
-    { "name": "QuizChampion", "amount": 68 },
-    { "name": "FilmLover4", "amount": 63 },
-    { "name": "PoetWisdom", "amount": 72 },
-    { "name": "AstroHunter", "amount": 89 },
-    { "name": "VirtualGuru", "amount": 91 },
-    { "name": "ChessFanatic", "amount": 65 },
-    { "name": "GamerVibes", "amount": 78 },
-    { "name": "DevTrendz", "amount": 84 },
-    { "name": "DigitalWanderer", "amount": 96 },
-    { "name": "CodingGenius", "amount": 88 },
-    { "name": "ArtisticSoul", "amount": 75 },
-]
 
 """ TEMP """
-def get_posts():
+def get_posts_objects():
     import json
-    
-    posts_file = os.path.join( os.path.dirname(__file__), 'posts.json' )
+    posts_file = os.path.join( os.path.dirname(__file__), 'data/posts.json' )
     with open(posts_file, 'r') as f:
-        return json.load(f)
+        posts = json.load(f)
+    media_folder = ff.linuxify_path('c:/Users/stirl/Downloads/media')
+    media_files = [str(file.relative_to(media_folder)) for file in Path(media_folder).rglob('*') if file.is_file()]
+    i = 0
+    for post in posts:
+        post['src'] = media_files[i]
+        i += 1
+        if i >= len(media_files):
+            i = 0
+    return posts
 
 def add_to_dict(dct, item, key):
     items = dct.get(key, [])
@@ -158,12 +72,19 @@ def get_creator_tags(mp):
             tags.append(item)
     return tags
 
+""" TEMP END """
 
-posts = get_posts()
+posts = get_posts_objects()
 tag_post_map = get_tag_post_map(posts)
 
 app = Flask(__name__)
 CORS(app)
+
+settingsHandler = JsonHandler('data/settings.json', prettify=True)
+if settingsHandler.isEmpty():
+    settingsHandler.setValue('media_folders', [])
+    settingsHandler.setValue('filename_formats', [])
+
 
 def generateReponse(main=None, time_taken=None):
     r = {}
@@ -174,31 +95,52 @@ def generateReponse(main=None, time_taken=None):
     return r
 
 @app.route("/")
-def home():
+def API_home():
     print("Blank request recieved")
     return jsonify({'message': 'Hello, CORS enabled!'}), 200
 
 
 @app.route("/get-sources")
-def get_sources():
+def API_get_sources():
     source_tags = get_source_tags(tag_post_map)
-    return generateReponse(source_tags), 200
+    return jsonify(source_tags), 200
 
 @app.route("/get-creators")
-def get_creators():
+def API_get_creators():
     creator_tags = get_creator_tags(tag_post_map)
-    return generateReponse(creator_tags), 200
+    return jsonify(creator_tags), 200
 
 @app.route("/get-tags")
-def get_tags():
+def API_get_tags():
     tags = get_general_tags(tag_post_map)
-    return generateReponse(tags), 200
+    return jsonify(tags), 200
 
+
+@app.route("/get-posts")
+def API_get_posts():
+    # request.args
+    return jsonify(posts), 200
+
+@app.route('/media')
+def API_serve_media():
+    media_path = request.args.get('src')
+    print(media_path)
+    if media_path == None:
+        return jsonify("[ERROR] Failed to get src from request args"), 500
+    media_path = ff.linuxify_path(media_path)
+    return send_file(media_path, mimetype='image/jpeg')
+
+
+@app.route('/get-media/<path:filename>')
+def API_get_media(filename):
+    folder = ff.linuxify_path('c:/Users/stirl/Downloads/media')
+    return send_from_directory(folder, filename)
+
+# c:/Users/stirl/Downloads/images/kobe-transparent.png
 
 # MAIN
 def main(args):
-    print('In CandyPopMedia flasApi.py main() ...')
-
+    print('Starting Flask Server ...')
     app.run(port=args.port, debug=False, use_reloader=True)
 
 
