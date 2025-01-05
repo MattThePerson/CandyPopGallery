@@ -141,7 +141,8 @@ def API_get_media(filename):
 # MAIN
 def main(args):
     print('Starting Flask Server ...')
-    app.run(port=args.port, debug=False, use_reloader=True)
+    port = args.port if args.port else 5000
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=True)
 
 
 if __name__ == '__main__':

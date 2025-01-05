@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#DEVICE_IP_ADDR="192.168.1.3"
 UTILITY_NAME=cpop-gall
 
 # Navigate to project directory
@@ -13,12 +14,12 @@ npm install
 cd ..
 
 # [FlaskAPI] Create and activate python virtual environment (if not already done)
-if [ ! -d "backend/.venv" ]; then
+cd backend
+if [ ! -d ".venv" ]; then
     echo
     echo "[VENV] Creating virtual environment..."
-    python3 -m venv backend/.venv
+    python3 -m venv .venv
 fi
-cd backend
 source .venv/bin/activate
 pip install -r requirements.txt
 deactivate

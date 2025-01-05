@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # server ports
-HTTP_SERVER_PORT=-1
-#8002
+DEVICE_IP_ADDR=-1
+# HTTP_SERVER_PORT=-1
 FLASK_API_PORT=5000
+
 
 # Navigate to project directory
 PROJECT_DIR="$(dirname "$(readlink -f "$0")")"

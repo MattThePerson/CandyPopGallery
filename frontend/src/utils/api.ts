@@ -1,6 +1,11 @@
 
 
-export const flask_api_url = "http://127.0.0.1:5000/";
+// const device_ip_addr = "localhost";
+const device_ip_addr = "192.168.1.3";
+const flask_api_port = 5000;
+
+export const flask_api_url = `http://${device_ip_addr}:${flask_api_port}/`;
+
 
 // makeApiRequestGET
 export function makeApiRequestGET(request: string, args: string[], callback: Function) {
