@@ -5,13 +5,13 @@ import './DropdownInput.css'
 
 type DropdownInputProps = {
     name: string,
-    options: { name: string; amount: number; }[] | null
+    options: { name: string; amount: number; }[] | null,
+    selectedOptions: {name: string, amount: number}[],
+    setSelectedOptions: Function,
 }
 
 
-function DropdownInput({ name, options }: DropdownInputProps) {
-
-    /* FUNCTIONS */
+function DropdownInput({ name, options, selectedOptions, setSelectedOptions }: DropdownInputProps) {
 
     // filter the list of options by the string in the input element
     function filterOptions(value: string) {
@@ -21,50 +21,6 @@ function DropdownInput({ name, options }: DropdownInputProps) {
         }
     }
 
-    // create tag element to add to selected list
-    function createTagEl(obj: {name: string, amount: number}): HTMLLIElement {
-        const newtag = document.createElement('li');
-        const d1 = document.createElement('div');
-        const d2 = document.createElement('div');
-        d1.classList.add('name');
-        d2.classList.add('amount');
-        d1.innerText = obj.name;
-        d2.innerText = obj.amount.toString();
-        newtag.appendChild(d1);
-        newtag.appendChild(d2);
-        newtag.addEventListener('click', (e) => {
-            (e.currentTarget as HTMLElement).remove();
-        });
-        return newtag;
-    }
-
-    // handle clicking an option in the dropdown list
-    function handleSelect(obj: {name: string, amount: number}) {
-        const component_el = document.getElementById(component_id)!;
-        const selected_el = component_el.querySelector('.selected-tags');
-        const dropdown_list_el = component_el.querySelector('ul');
-        const newtag = createTagEl(obj);
-        selected_el?.appendChild(newtag);
-        dropdown_list_el?.classList.remove('show');
-    }
-    
-    function getDropdownList() {
-        if (!options) {
-            return (<div>No options</div>)
-        }
-        
-        return filteredOptions?.map((opt) => 
-            <li key={opt.name+opt.amount} onMouseDown={() => handleSelect(opt)}> {/* Could be optimized */}
-            <div>{opt.name}</div><div>{opt.amount}</div>
-        </li>
-        )
-    }
-
-
-    /* MAIN */
-
-    // console.log(options);
-    
     const component_id = name + '-dropdown-input';
     options?.sort((a, b) => b.amount - a.amount);
     
@@ -73,7 +29,6 @@ function DropdownInput({ name, options }: DropdownInputProps) {
     // show/hide dropdown
     useEffect(() => {
         const component_el = document.getElementById(component_id)!;
-        
         const input_el = component_el.querySelector('input');
         const dropdown_list_el = component_el.querySelector('.dropdown-list');
 
@@ -82,20 +37,50 @@ function DropdownInput({ name, options }: DropdownInputProps) {
     }, []);
     
     // update filtered options on when options change
-    useEffect(() => {
-        // console.log("useEffect() options updated");
-        filterOptions('');
-    }, [options]);
+    useEffect(() => filterOptions(''), [options]);
 
+    // handle clicking an option in the dropdown list
+    function handleSelect(opt: any) {
+        document.getElementById(component_id)!.querySelector('ul')?.classList.remove('show');
+        const newSelected = [...selectedOptions, opt];
+        setSelectedOptions(newSelected)
+    }
+
+    // 
+    function handleSelectRemove(remove_opt: any) {
+        const newSelected = selectedOptions.filter(opt => opt !== remove_opt);
+        setSelectedOptions(newSelected);
+    }
+    
+    
     /* RETURN */
+    const selectedOptionsEls = selectedOptions?.map((opt, idx) => 
+        <li key={'selected-'+idx} onClick={() => handleSelectRemove(opt)}>
+            <div className="name">{opt.name} </div>
+            <div className="amount">{opt.amount.toString()} </div>
+        </li>
+    )
 
+    const filteredOptionsEls = filteredOptions?.map((opt) => 
+        <li key={opt.name+opt.amount} onMouseDown={() => handleSelect(opt)}>   {/* Could be optimized */}
+            <div>{opt.name}</div><div>{opt.amount}</div>
+        </li>
+    )
+    
     return (
         <div className="DropdownInput" id={component_id}>
             <div className="name">{name}</div>
-            <ul className="selected-tags"></ul>
+            <ul className="selected-tags">
+                {selectedOptionsEls}
+            </ul>
             <input id={name + "_input"} type="search" autoComplete="off" onChange={e => filterOptions(e.target.value)} />
             <ul className="dropdown-list">
-                {getDropdownList()}
+                { options ? (
+                    filteredOptionsEls
+                ) : (
+                    <div>Loading ...</div>
+                )
+                }
             </ul>
         </div>
     )

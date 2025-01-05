@@ -17,7 +17,8 @@ body {
 #side-bar-section {
     background: purple;
     width: 15rem;
-    height: 100rem;
+    height: 100vh;
+    position: sticky; top: 0;
 }
 
 
@@ -31,10 +32,10 @@ body {
 
 #control-bar {
     width: 100%;    
-    /* height: 4rem; */
     height: fit-content;
-    position: sticky;
+    position: sticky; top: 0;
     margin-top: 1rem;
+    z-index: 999;
 }
 
 #content-container {
@@ -57,6 +58,10 @@ body {
 
 #feed-date-nav {
     width: 4rem;
-    height: 100%;
+    height: 100vh;
     background: orange;
+    position: fixed; top: 0; right: 0;
+    /* transform: translateY(-1.5rem); */
+    margin-top: 2rem;
+    padding-top: 3rem;
 }
