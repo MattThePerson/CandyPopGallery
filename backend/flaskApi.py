@@ -10,17 +10,20 @@ import fun.FlaskFunctions as ff
 """ TEMP """
 def get_posts_objects():
     import json
+    import random
     posts_file = os.path.join( os.path.dirname(__file__), 'data/posts.json' )
     with open(posts_file, 'r') as f:
         posts = json.load(f)
-    media_folder = ff.linuxify_path('c:/Users/stirl/Downloads/media')
+    media_folder = ff.linuxify_path('c:/Users/stirl/Downloads/media/images')
     media_files = [str(file.relative_to(media_folder)) for file in Path(media_folder).rglob('*') if file.is_file()]
     i = 0
     for post in posts:
         post['src'] = media_files[i]
+        post['filename'] = post['src'].split('/')[-1]
         i += 1
         if i >= len(media_files):
             i = 0
+        post['likes'] = random.randint(0, 999)
     return posts
 
 def add_to_dict(dct, item, key):
@@ -121,8 +124,8 @@ def API_get_tags():
 
 @app.route("/get-posts")
 def API_get_posts():
-    # request.args
-    return jsonify(posts), 200
+    filtered = ff.filter_posts(posts, request.args)
+    return jsonify(filtered), 200
 
 @app.route('/media')
 def API_serve_media():
@@ -136,7 +139,7 @@ def API_serve_media():
 
 @app.route('/get-media/<path:filename>')
 def API_get_media(filename):
-    folder = ff.linuxify_path('c:/Users/stirl/Downloads/media')
+    folder = ff.linuxify_path('c:/Users/stirl/Downloads/media/images')
     return send_from_directory(folder, filename)
 
 # c:/Users/stirl/Downloads/images/kobe-transparent.png

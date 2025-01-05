@@ -53,7 +53,11 @@
     .order-button img {
         height: 0.9rem;
     }
-    .order-button img:hover {
+    .order-button:hover {
+        transform: rotateX(180deg);
+    }
+    .order-button.asc {
+        background: orange;
         transform: rotateX(180deg);
     }
 }
