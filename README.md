@@ -14,6 +14,7 @@
 - [FRONT] Add grid view
 - [FRONT] Add routing between state changes
 - [FRONT] Add overlay mode
+- [FRONT] Add mobile UI
 
 - [BACK] Add listening for file changes in media folders
 - [FRONT] Add settings page (for adding media folders)

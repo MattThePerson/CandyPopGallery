@@ -80,7 +80,10 @@ tag_post_map = get_tag_post_map(posts)
 app = Flask(__name__)
 CORS(app)
 
-settingsHandler = JsonHandler('data/settings.json', prettify=True)
+SCRIPT_DIR = os.path.dirname(__file__)
+SETTINGS_FN = os.path.join( SCRIPT_DIR, 'data/settings.json' )
+
+settingsHandler = JsonHandler(SETTINGS_FN, prettify=True)
 if settingsHandler.isEmpty():
     settingsHandler.setValue('media_folders', [])
     settingsHandler.setValue('filename_formats', [])
@@ -141,7 +144,7 @@ def API_get_media(filename):
 # MAIN
 def main(args):
     print('Starting Flask Server ...')
-    port = args.port if args.port else 5000
+    port = args.port if args.port else 5002
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=True)
 
 

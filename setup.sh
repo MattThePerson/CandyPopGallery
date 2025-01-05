@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#DEVICE_IP_ADDR="192.168.1.3"
 UTILITY_NAME=cpop-gall
 
 # Navigate to project directory

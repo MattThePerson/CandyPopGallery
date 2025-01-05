@@ -1,10 +1,6 @@
 
 
-// const device_ip_addr = "localhost";
-const device_ip_addr = "192.168.1.3";
-const flask_api_port = 5000;
-
-export const flask_api_url = `http://${device_ip_addr}:${flask_api_port}/`;
+export const flask_api_url = `http://${import.meta.env.VITE_DEVICE_IP_ADDR}:${import.meta.env.VITE_FLASK_API_PORT}/`;
 
 
 // makeApiRequestGET

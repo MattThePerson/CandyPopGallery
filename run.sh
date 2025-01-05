@@ -1,15 +1,21 @@
 #!/bin/bash
 
 # server ports
-DEVICE_IP_ADDR=-1
-# HTTP_SERVER_PORT=-1
-FLASK_API_PORT=5000
-
+DEVICE_IP_ADDR="192.168.1.3" # CHANGE THIS TO YOUR IP ADDRESS!!
+FLASK_API_PORT=5002
+HTTP_SERVER_PORT=5001
 
 # Navigate to project directory
 PROJECT_DIR="$(dirname "$(readlink -f "$0")")"
 cd "$PROJECT_DIR"
 
+# ADD VITE ENVIRONMENT VARIABLES (SO FRONTEND KNOWS ABOUT IPs AND PORTs)
+VITE_ENV_FILE="frontend/.env.local"
+
+echo "VITE_DEVICE_IP_ADDR=$DEVICE_IP_ADDR" > $VITE_ENV_FILE
+echo "VITE_FLASK_API_PORT=$FLASK_API_PORT" >> $VITE_ENV_FILE
+
+export "VITE_HTTP_SERVER_PORT=$HTTP_SERVER_PORT"
 
 #### FUNCTIONS ####
 
@@ -19,6 +25,7 @@ start_servers() {
     # Start Flask API
     echo
     echo "[Flask API] Starting Flask API on port $FLASK_API_PORT..."
+    echo $FLASK_API_PORT
     python3 backend/flaskApi.py --port $FLASK_API_PORT "$@" &
     FLASK_API_PID=$!
 
