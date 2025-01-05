@@ -1,4 +1,8 @@
 {
-    "media_folders": [],
-    "filename_formats": []
+    "media_folders": [
+        "A:/Whispera/gifsCollection"
+    ],
+    "filename_formats": [
+        ""
+    ]
 }
