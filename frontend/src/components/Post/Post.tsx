@@ -21,7 +21,7 @@ function Post({data}: PostProps) {
                 <div className="tag creator">{data['creator']} </div>
             </div>
             <div className="tag-bar lower-tag-bar">
-                {data['tags'].map((tag: string, idx: number) => <div key={"tag-" + idx} className="tag general">{tag} </div> )}
+                {data['tags']?.map((tag: string, idx: number) => <div key={"tag-" + idx} className="tag general">{tag} </div> )}
             </div>
             <div>{data.likes} </div>
             <MediaComponent src={flask_api_url + 'get-media/' + data.src} />

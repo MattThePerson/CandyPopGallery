@@ -1,159 +1,102 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+# from typing import Any
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import argparse
 import os
-from pathlib import Path
+# from pathlib import Path
+import time
 from util.json_handler import JsonHandler
+from util.string_parser import StringParser
 import fun.FlaskFunctions as ff
 
 
-""" TEMP """
-def get_posts_objects():
-    import json
-    import random
-    posts_file = os.path.join( os.path.dirname(__file__), 'data/posts.json' )
-    with open(posts_file, 'r') as f:
-        posts = json.load(f)
-    media_folder = ff.linuxify_path('c:/Users/stirl/Downloads/media/images')
-    media_files = [str(file.relative_to(media_folder)) for file in Path(media_folder).rglob('*') if file.is_file()]
-    i = 0
-    for post in posts:
-        post['src'] = media_files[i]
-        post['filename'] = post['src'].split('/')[-1]
-        i += 1
-        if i >= len(media_files):
-            i = 0
-        post['likes'] = random.randint(0, 999)
-    return posts
-
-def add_to_dict(dct, item, key):
-    items = dct.get(key, [])
-    items.append(item)
-    dct[key] = items
-    return dct
-
-def get_tag_post_map(posts):
-    mp = {}
-    for post in posts:
-        id_, src, cre, tags = post['id'], post['source'], post['creator'], post['tags']
-        mp = add_to_dict(mp, id_, 'source--' + src)
-        mp = add_to_dict(mp, id_, 'creator--' + cre)
-        for tag in tags:
-            mp = add_to_dict(mp, id_, tag)
-    return mp
-
-def get_general_tags(mp):
-    tags = []
-    for tag, lst in mp.items():
-        if '--' not in tag:
-            item = {
-                'name': tag,
-                'amount': int(len(lst))
-            }
-            tags.append(item)
-    return tags
-
-def get_source_tags(mp):
-    tags = []
-    for tag, lst in mp.items():
-        if tag.startswith('source--'):
-            item = {
-                'name': tag.replace('source--', ''),
-                'amount': int(len(lst))
-            }
-            tags.append(item)
-    return tags
-
-def get_creator_tags(mp):
-    tags = []
-    for tag, lst in mp.items():
-        if tag.startswith('creator--'):
-            item = {
-                'name': tag.replace('creator--', ''),
-                'amount': int(len(lst))
-            }
-            tags.append(item)
-    return tags
-
-""" TEMP END """
-
-posts = get_posts_objects()
-tag_post_map = get_tag_post_map(posts)
-
 app = Flask(__name__)
 CORS(app)
-
-SCRIPT_DIR = os.path.dirname(__file__)
-SETTINGS_FN = os.path.join( SCRIPT_DIR, 'data/settings.json' )
-
-settingsHandler = JsonHandler(SETTINGS_FN, prettify=True)
-if settingsHandler.isEmpty():
-    settingsHandler.setValue('media_folders', [])
-    settingsHandler.setValue('filename_formats', [])
-
-
-def generateReponse(main=None, time_taken=None):
-    r = {}
-    #r['favourites_ids'] = jsonHandlerApp.getValue('favourites')
-    # r['collections'] = metadataHandler.getValue('collections', [])
-    r['main'] = main
-    r['time_taken'] = time_taken
-    return r
 
 @app.route("/")
 def API_home():
     print("Blank request recieved")
     return jsonify({'message': 'Hello, CORS enabled!'}), 200
 
-
-@app.route("/get-sources")
-def API_get_sources():
-    source_tags = get_source_tags(tag_post_map)
-    return jsonify(source_tags), 200
-
-@app.route("/get-creators")
-def API_get_creators():
-    creator_tags = get_creator_tags(tag_post_map)
-    return jsonify(creator_tags), 200
-
 @app.route("/get-tags")
 def API_get_tags():
-    tags = get_general_tags(tag_post_map)
-    return jsonify(tags), 200
-
+    tags_data = ff.get_tag_amounts(ac.posts)
+    if tags_data == None:
+        return jsonify('Unable to process tags'), 500
+    return jsonify(tags_data), 200
 
 @app.route("/get-posts")
 def API_get_posts():
-    filtered = ff.filter_posts(posts, request.args)
+    filtered = ff.filter_posts(ac.posts, request.args)
     return jsonify(filtered), 200
 
-@app.route('/media')
-def API_serve_media():
-    media_path = request.args.get('src')
-    print(media_path)
-    if media_path == None:
-        return jsonify("[ERROR] Failed to get src from request args"), 500
-    media_path = ff.linuxify_path(media_path)
-    return send_file(media_path, mimetype='image/jpeg')
-
-
 @app.route('/get-media/<path:filename>')
-def API_get_media(filename):
-    folder = ff.linuxify_path('c:/Users/stirl/Downloads/media/images')
-    return send_from_directory(folder, filename)
+def API_get_media(filename: str):
+    for mediadir in ac.media_dirs:
+        if os.path.exists( os.path.join(mediadir, filename) ):
+            return send_from_directory(mediadir, filename)
+    return send_from_directory('...', '...')
 
-# c:/Users/stirl/Downloads/images/kobe-transparent.png
+
+### GLOBALS ###
+
+SCRIPT_DIR = os.path.dirname(__file__)
+SETTINGS_FN = os.path.join( SCRIPT_DIR, 'data/settings.json' )
+POST_DATA_FN = os.path.join( SCRIPT_DIR, 'data/settings.json' )
+
+ac = argparse.Namespace(
+    media_paths = [],
+    posts = [],
+    settings = JsonHandler(SETTINGS_FN, prettify=True),
+    post_data = JsonHandler(POST_DATA_FN, prettify=True),
+    filename_parser = None,
+)
+
 
 # MAIN
-def main(args):
-    print('Starting Flask Server ...')
+def main(args: argparse.Namespace):
+
+    # read settings
+    if ac.settings.isEmpty():
+        ff.initialize_settings(ac.settings)
+    
+    ac.media_dirs = [ ff.linuxify_path(f) for f in ac.settings.getValue('media_folders') ]
+    ac.filename_parser = StringParser(ac.settings.getValue('filename_formats'))
+
+    # scan dirs for posts
+    print('[MAIN:SCAN] Fetching media from media folders ...')
+    start = time.time()
+    ac.media_paths = ff.get_media_from_dirs(ac.media_dirs)
+    print('[MAIN:SCAN] Loaded {:_} media from {} base folders in {:.1f} sec'.format(len(ac.media_paths), len(ac.media_dirs), time.time()-start))
+    
+    # generate post objects from media paths
+    print('[MAIN:PROCESS] Generating post objects from media ...')
+    start = time.time()
+    ac.posts = ff.generate_posts(ac.media_paths, ac.filename_parser)
+    print('[MAIN:PROCESS] Done. Took {:.1f} sec'.format(time.time()-start))
+    
+    # [OPTIONAl] Replace media srcs with SWF alternatives
+    if args.safe_for_work:
+        print('[MODE] Replacing SRCs with SWF media ...')
+        SFW_MEDIA_DIR = ff.linuxify_path('C:/Users/stirl/Downloads/media')
+        ac.media_dirs = [SFW_MEDIA_DIR]
+        ac.posts = ff.make_posts_swf(ac.posts, SFW_MEDIA_DIR)
+    
+    print('[MAIN] Starting Flask Server ...')
     port = args.port if args.port else 5002
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=True)
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', help='Port to start flask api on', type=int)
     parser.add_argument('-um', '--update_mode', action='store_true', help='Update loaded media when change occurs in media dirs')
+    parser.add_argument('-swf', '--safe_for_work', action='store_true', help='SWF mode, replace post SRCs with SWF media')
+    
     args = parser.parse_args()
-    main(args)
+    print()
+    try:
+        main(args)
+    except KeyboardInterrupt:
+        print('\n\n[INTERRUPT] Stopping server ...')
+    print()

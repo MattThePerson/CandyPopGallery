@@ -28,14 +28,18 @@ function App() {
     // request tags and posts
     useEffect(() => {
         // console.log("useEffect() -> api request")
-        makeApiRequestGET('get-sources', [], (res: any) => {
-            setSources(res);
-        });
-        makeApiRequestGET('get-creators', [], (res: any) => {
-            setCreators(res);
-        });
+        // makeApiRequestGET('get-sources', [], (res: any) => {
+        //     setSources(res);
+        // });
+        // makeApiRequestGET('get-creators', [], (res: any) => {
+        //     setCreators(res);
+        // });
         makeApiRequestGET('get-tags', [], (res: any) => {
-            setTags(res);
+            console.log(res);
+            
+            setSources(res.sources);
+            setCreators(res.creators);
+            setTags(res.tags);
         });
 
         const request_args = {

@@ -11,23 +11,6 @@ interface SimpleStreamProps {
 
 function SimpleStream({posts}: SimpleStreamProps) {
 
-    
-    // document.addEventListener('scroll', () => {
-    //     if (window.innerHeight + window.scrollY >= document.body.offsetHeight-750) {
-    //         console.log("Loading more posts ...");
-    //         setLoadedPostAmount(prev => prev + 5);
-    //     }
-    // });
-    
-    // useEffect(() => {
-    //     if (posts.length > 0) {
-    //         console.log("useEffect()");
-    //         setLoadedPostAmount(Math.max(loadedPostAmount, 5));
-    //     }
-    // }, [posts]);
-
-    // console.log("loadedPostAmount:", loadedPostAmount);
-    
     const [loadedPostAmount, setLoadedPostAmount] = useState(0);
 
     const loaderRef = useRef(null);
@@ -52,7 +35,7 @@ function SimpleStream({posts}: SimpleStreamProps) {
     
     /* HTML */
     const postElementsToDisplay = posts.slice(0, loadedPostAmount).map((post: any, idx: number) => 
-        <Post key={post.id+idx} data={post} />
+        <Post key={post.id+'-'+idx} data={post} />
     );
     
     return (
