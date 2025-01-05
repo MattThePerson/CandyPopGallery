@@ -3,7 +3,7 @@ from flask_cors import CORS
 import argparse
 import os
 from pathlib import Path
-from lib.json_handler import JsonHandler
+from util.json_handler import JsonHandler
 import fun.FlaskFunctions as ff
 
 
