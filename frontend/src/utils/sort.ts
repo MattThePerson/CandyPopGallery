@@ -48,7 +48,6 @@ function seededRandom(seed: string): number {
 
 // shuffle list
 export function shuffleListWithSeed(list: any[], seed: string): any {
-    // @ts-ignore
     list.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
     const newList = [...list];
     newList.sort(() => seededRandom(seed) - 0.5); // Random shuffle based on seed

@@ -6,7 +6,7 @@
 <!-- - [BACK] Add WSL2 networking support -->
 <!-- - [FRONT] Add sortby state and posts request -->
 <!-- - [BACK] Add simple handling of request filters for mock data -->
-- [FRONT] Add simple feed which loads on scroll
+<!-- - [FRONT] Add simple feed which loads on scroll -->
 - [BACK] Add processing of real media
 - [MILESTONE] Minimum viable product
 

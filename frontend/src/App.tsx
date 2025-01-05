@@ -6,7 +6,8 @@ import { makeApiRequestGET, makeApiRequestGET_JSON } from './utils/api'
 import { parseSortbyString, shuffleListWithSeed, sortPostsByParam } from './utils/sort'
 
 import DropdownInput from './components/DropdownInput'
-import DynamicStream from './components/DynamicStream'
+// import DynamicStream from './components/DynamicStream'
+import SimpleStream from './components/SimpleStream'
 import ControlBar from './components/ControlBar'
 
 
@@ -26,7 +27,7 @@ function App() {
 
     // request tags and posts
     useEffect(() => {
-        console.log("useEffect() -> api request")
+        // console.log("useEffect() -> api request")
         makeApiRequestGET('get-sources', [], (res: any) => {
             setSources(res);
         });
@@ -44,17 +45,17 @@ function App() {
             tags_combine: '&', // & or |
         }
         makeApiRequestGET_JSON('get-posts', request_args, (res: any) => {
-            console.log(res);
+            // console.log(res);
             setPosts(res);
         });
     }, [selectedSources, selectedCreators, selectedTags]);
 
     // sort & filter loaded posts
     useEffect(() => {
-        console.log("useEffect() -> sort posts")
+        // console.log("useEffect() -> sort posts")
         const [sortby_param, sort_descending] = parseSortbyString(sortby);
-        console.log(sortby_param, sort_descending);
-        console.log("length of posts:", posts.length);
+        // console.log(sortby_param, sort_descending);
+        // console.log("length of posts:", posts.length);
         if (posts.length > 0 && (sortby_param in posts[0])) {
             console.log("Sorting posts by:", sortby_param, sort_descending)
             const newPosts = sortPostsByParam(posts, sortby_param, sort_descending);
@@ -85,13 +86,14 @@ function App() {
                 <div id="content-container">
                     <div id="feed-container">
                         <div className="feed">
-                            <DynamicStream
+                            {/* <DynamicStream
                                 posts={posts}
                                 jumpTo={() => {}}
                                 viewMode="feed"
                                 x={3}
                                 y={3}
-                            />
+                            /> */}
+                            <SimpleStream posts={posts} />
                         </div>
                     </div>
                     <div id="feed-date-nav">
