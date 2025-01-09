@@ -1,6 +1,25 @@
 from typing import Any
 import parse # type: ignore
 
+# Type	Characters Matched	                                                                Output
+# l	    Letters (ASCII)	                                                                    str
+# w	    Letters, numbers and underscore	                                                    str
+# W	    Not letters, numbers and underscore	                                                str
+# s	    Whitespace	                                                                        str
+# S	    Non-whitespace	                                                                    str
+# d	    Digits (effectively integer numbers)	                                            int
+# D	    Non-digit	                                                                        str
+# n	    Numbers with thousands separators (, or .)	                                        int
+# %	    Percentage (converted to value/100.0)	                                            float
+# f	    Fixed-point numbers	                                                                float
+# F	    Decimal numbers	                                                                    Decimal
+# e	    Floating-point numbers with exponent e.g. 1.1e-10, NAN (all case insensitive)	    float
+# g	    General number format (either d, f or e)	                                        float
+# b	    Binary numbers	                                                                    int
+# o	    Octal numbers	                                                                    int
+# x	    Hexadecimal numbers (lower and upper case)	                                        int
+
+
 class StringParser:
 
     def __init__(self, formats: list[str], use_tags: bool=True):
@@ -143,3 +162,4 @@ if __name__ == '__main__':
     ]
 
     parser = StringParser(formats)
+

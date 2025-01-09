@@ -1,11 +1,24 @@
-# Changes
-# 2024-06-18
-# - tweaked appendValue()
-# 
-# TODO:
-# - add removeKey() functionality
-# - [REVISE] simplity method names
-# - [REVISE] Extend dict functinality, handler[key] = value, del handler[key], key in handler, len(handler)
+"""
+By Matt Stirling
+
+
+## CHANGELOG:
+
+2025-01-06
+- Added exception handling for error on json read (could result in json document being overwritten as empty)
+
+2025-01-05
+- Added type declarations
+
+2024-06-18
+- tweaked appendValue()
+
+
+## TODO:
+- add removeKey() functionality
+- [REVISE] simplity method names
+- [REVISE] Extend dict functinality, handler[key] = value, del handler[key], key in handler, len(handler)
+"""
 import json
 import os
 import shutil
@@ -79,8 +92,8 @@ class JsonHandler:
             with open(self.filepath, 'r') as openfile:
                 jsonObject = json.load(openfile)
             return jsonObject
-        except:
-            return {}
+        except Exception as e:
+            raise Exception('[JsonHandler] Unable to read file: "{}"\n{}'.format(self.filepath, e))
         
     def save(self):
         if self.readonly:

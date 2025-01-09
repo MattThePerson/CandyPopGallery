@@ -4,10 +4,10 @@ import down_arrow from './assets/down-arrow.svg'
 
 interface ControlBarProps {
     sortby: string;
-    setSortby: Function;
+    handleSortChange: Function;
 }
 
-function ControlBar({sortby, setSortby}: ControlBarProps) {
+function ControlBar({sortby, handleSortChange}: ControlBarProps) {
 
     function updateSortby(target: HTMLDivElement | any, type: string) {
         const order_button_click = target.classList.contains('order-button');
@@ -25,7 +25,7 @@ function ControlBar({sortby, setSortby}: ControlBarProps) {
                 new_sortby = '-desc';
         }
         const newSortby = type + new_sortby;
-        setSortby(newSortby);
+        handleSortChange(newSortby);
     }
 
     const sortbyTypes = ["date-added", "date-uploaded", "likes", "random"];

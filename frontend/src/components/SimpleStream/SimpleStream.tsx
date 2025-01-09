@@ -7,11 +7,12 @@ import Post from '../Post';
 
 interface SimpleStreamProps {
     posts: any[];
+    streamLoadState: any;
+    setStreamLoadState: Function;
+    setSelectedTags: Function;
 }
 
-function SimpleStream({posts}: SimpleStreamProps) {
-
-    const [loadedPostAmount, setLoadedPostAmount] = useState(0);
+function SimpleStream({posts, streamLoadState, setStreamLoadState, setSelectedTags}: SimpleStreamProps) {
 
     const loaderRef = useRef(null);
 
@@ -19,8 +20,11 @@ function SimpleStream({posts}: SimpleStreamProps) {
         const observer = new IntersectionObserver(
             (entries) => {
                 if (entries[0].isIntersecting) {
-                    console.log('Loading more posts ...');
-                    setLoadedPostAmount(prev => prev + 5);
+                    setStreamLoadState((currState: any) => {
+                        const nextState = { ...currState, postsLoaded: currState.postsLoaded + 2 }
+                        console.log('[IntersectionObserver] Loading more posts ...', currState.postsLoaded);
+                        return nextState;
+                    });
                 }
             },
             { rootMargin: '750px' }
@@ -28,20 +32,17 @@ function SimpleStream({posts}: SimpleStreamProps) {
 
         if (loaderRef.current) observer.observe(loaderRef.current);
 
-        return () => observer.disconnect();
+        return () => observer.disconnect()
     }, []);
-    
-    console.log('loadedPostAmount:', loadedPostAmount);
-    
+
     /* HTML */
-    const postElementsToDisplay = posts.slice(0, loadedPostAmount).map((post: any, idx: number) => 
-        <Post key={post.id+'-'+idx} data={post} />
+    const postElementsToDisplay = posts.slice(0, streamLoadState.postsLoaded).map((post: any, idx: number) => 
+        <Post key={post.id+'-'+idx} data={post} setSelectedTags={setSelectedTags} />
     );
     
     return (
         <div className="SimpleStream">
             {postElementsToDisplay}
-            {`Loaded ${loadedPostAmount} posts`}
             <div ref={loaderRef} style={{height: '1px'}}></div> {/* invisible loader element */}
         </div>
     )

@@ -22,6 +22,10 @@
         padding: .1rem .5rem;
         border-radius: 5px;
         border: 1px solid #0005;
+        cursor: pointer;
+    }
+    .tag:active {
+        opacity: 80%;
     }
 
     .tag.creator { background: purple; }

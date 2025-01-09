@@ -6,7 +6,7 @@ import './DropdownInput.css'
 type DropdownInputProps = {
     name: string,
     options: { name: string; amount: number; }[] | null,
-    selectedOptions: {name: string, amount: number}[],
+    selectedOptions: string[],
     setSelectedOptions: Function,
 }
 
@@ -42,7 +42,7 @@ function DropdownInput({ name, options, selectedOptions, setSelectedOptions }: D
     // handle clicking an option in the dropdown list
     function handleSelect(opt: any) {
         document.getElementById(component_id)!.querySelector('ul')?.classList.remove('show');
-        const newSelected = [...selectedOptions, opt];
+        const newSelected = [...selectedOptions, opt.name];
         setSelectedOptions(newSelected)
     }
 
@@ -56,8 +56,7 @@ function DropdownInput({ name, options, selectedOptions, setSelectedOptions }: D
     /* RETURN */
     const selectedOptionsEls = selectedOptions?.map((opt, idx) => 
         <li key={'selected-'+idx} onClick={() => handleSelectRemove(opt)}>
-            <div className="name">{opt.name} </div>
-            <div className="amount">{opt.amount.toString()} </div>
+            <div className="name">{opt} </div>
         </li>
     )
 
@@ -69,7 +68,7 @@ function DropdownInput({ name, options, selectedOptions, setSelectedOptions }: D
     
     return (
         <div className="DropdownInput" id={component_id}>
-            <div className="name">{name}</div>
+            <div className="name">{name + ` (${options ? options.length : 0})`}</div>
             <ul className="selected-tags">
                 {selectedOptionsEls}
             </ul>

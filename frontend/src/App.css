@@ -19,6 +19,7 @@ body {
     width: 15rem;
     height: 100vh;
     position: sticky; top: 0;
+    padding-left: 0.5rem;
 }
 
 

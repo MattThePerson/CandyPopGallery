@@ -44,3 +44,11 @@ export function makeApiRequestGET_JSON(request: string, data: any, callback: Fun
             console.error('Fetch error:', error);
         });
 }
+
+// 
+export function testApiConnection(route: string, succ_handler: Function, fail_handler: Function) {
+
+    fetch(flask_api_url + route)
+        .then(() => succ_handler())
+        .catch(() => fail_handler());
+}
