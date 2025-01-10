@@ -16,22 +16,22 @@ function App() {
     /* STATE */
 
     const [posts, setPosts] = useState([])
-    
+
     const [sources, setSources] =   useState(null);
     const [creators, setCreators] = useState(null);
     const [tags, setTags] =         useState(null);
     
-    const [streamLoadState, setStreamLoadState] = useState({ postsLoaded: 2, currentPost: 0 });
+    const [streamLoadState, setStreamLoadState] = useState({ postsLoaded: 5, currentPost: 0 });
     
     const [splash, setSplash] = useState('connecting ...');
-    const [fetchedInfo, setFetchedInfo] = useState<any>('loading ...')
+    const [fetchedInfo, setFetchedInfo] = useState<any>('loading ...');
     
     // reproducible state
     const [selectedSources, setSelectedSources] =   useState<string[]>([]);
     const [selectedCreators, setSelectedCreators] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] =         useState<string[]>([]);
 
-    const [sortby, setSortby] = useState('date-uploaded-desc');
+    const [sortby, setSortby] = useState('date-downloaded-desc');
 
     /* EFFECTS */
     

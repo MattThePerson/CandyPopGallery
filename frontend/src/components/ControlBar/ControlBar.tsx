@@ -28,7 +28,7 @@ function ControlBar({sortby, handleSortChange}: ControlBarProps) {
         handleSortChange(newSortby);
     }
 
-    const sortbyTypes = ["date-added", "date-uploaded", "likes", "random"];
+    const sortbyTypes = ["date-downloaded", "date-uploaded", "likes", "random"];
 
     const sortbyButtons = sortbyTypes.map((type, idx) => {
 

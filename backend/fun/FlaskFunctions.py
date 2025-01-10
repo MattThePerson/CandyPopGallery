@@ -153,6 +153,7 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
     post['id'] = get_post_id(post)
     tags_params = ['source', 'creator', 'author', 'suffix_tags', 'tags_from_title', 'comments_tags', 'tags_artist', 'tags_character', 'tags_copyright', 'tags_general']
     post['tags'] = make_combined_list_from_params(post, tags_params)
+    post['tags'] = [ t for t in set(post['tags']) if t not in ['[deleted]'] ]
     return post
 
 

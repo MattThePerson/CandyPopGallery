@@ -15,6 +15,7 @@ body {
 /* SIDE BAR SECTION */
 
 #side-bar-section {
+    display: block;
     background: purple;
     width: 15rem;
     height: 100vh;
@@ -22,6 +23,11 @@ body {
     padding-left: 0.5rem;
 }
 
+@media (max-width: 1200px) {
+    #side-bar-section {
+        display: none;
+    }
+}
 
 /* MAIN SECTION */
 
@@ -46,14 +52,15 @@ body {
 }
 
 #feed-container {
-    margin: 2rem;
-    width: 100%;
+    padding: 2rem;
+    width: 90%;
     background: #fff1;
 }
 
 #feed-container .feed {
-    width: 40rem;
-    background: brown;
+    
+    max-width: 100%;
+    background: rgb(19, 26, 32);
     height: 100%;
 }
 
