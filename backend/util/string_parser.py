@@ -1,3 +1,9 @@
+""" 
+CHANGELOG:
+
+2025.01.10
+- Fixed tag parsing (would return first part split by tag_sep)
+"""
 from typing import Any
 import parse # type: ignore
 
@@ -58,11 +64,12 @@ class StringParser:
     def extract_tags(self, string: str):
         tags: list[str] = []
         parts = string.split(self.tags_sep)
-        for i in reversed(range(1, len(parts))):
-            part = parts[i]
-            if not ' ' in part:
-                tags.append(part)
-        return parts[0], tags
+        while parts != []:
+            if ' ' not in parts[-1]:
+                tags.append(parts.pop())
+            else:
+                break
+        return self.tags_sep.join(parts), tags
     
     @staticmethod
     def separate_tags(data: dict[str, Any]):

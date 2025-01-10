@@ -43,14 +43,15 @@ def API_make_query():
     }), 200
     
     
-    
-
 @app.route('/media/<path:filename>')
 def API_get_media(filename: str):
     for mediadir in gl.media_dirs:
+        print('\nDIR: ', os.path.exists(mediadir))
+        print('fn:', filename)
+        print('file exists:', os.path.exists( os.path.join(mediadir, filename) ))
         if os.path.exists( os.path.join(mediadir, filename) ):
             return send_from_directory(mediadir, filename)
-    print('[WARNING] Media not found "{}"'.format(filename))
+    print('[WARNING] Media not found in {} mediadirs "{}"'.format(len(gl.media_dirs),filename))
     return send_from_directory('...', '...')
 
 
@@ -58,13 +59,13 @@ def API_get_media(filename: str):
 
 SCRIPT_DIR = os.path.dirname(__file__)
 SETTINGS_FN = os.path.join( SCRIPT_DIR, 'data/settings.json' )
-POST_DATA_FN = os.path.join( SCRIPT_DIR, 'data/posts.json' )
+POST_DATA_FN = os.path.join( SCRIPT_DIR, 'data/saved_posts.json' )
 
 class NameSpace:
     media_paths: list[str] = []
     media_dirs: list[str] = []
     posts: dict[str, Any] = {}
-    settings = JsonHandler(SETTINGS_FN, prettify=True)
+    settings = JsonHandler(SETTINGS_FN, prettify=True, readonly=True)
     saved_posts = JsonHandler(POST_DATA_FN, prettify=True)
     filename_parser: StringParser | None = None
     
@@ -94,26 +95,51 @@ def main(args: argparse.Namespace):
     # generate post objects from media paths
     print('[MAIN:PROCESS] Generating post objects for {:_} media ...'.format(len(media_paths)))
     start = time.time()
-    gl.posts = ff.load_post_objects(media_paths, gl.saved_posts.jsonObject, gl.filename_parser)
+    gl.posts = ff.load_media_objects(media_paths, gl.media_dirs, gl.saved_posts.jsonObject, gl.filename_parser, redo=args.redo_media_extract)
+    print('saving posts ...')
+    for src, post in gl.posts.items():
+        gl.saved_posts.setValue(src, post, nosave=True)
+    gl.saved_posts.save()
     print('[MAIN:PROCESS] Done. Took {:.1f} sec'.format(time.time()-start))
     
-    # [OPTIONAl] Replace media srcs with SWF alternatives
+    ## PRINT OUT POST OBJECTS (AND PAUSE) ##
+    if args.print_posts:
+        import random
+        random.seed(0)
+        POSTS = [ v for v in gl.posts.values() ]
+        random.shuffle(POSTS)
+        print()
+        for i in range(args.print_posts):
+            post = POSTS[i]
+            print('\n  ({}) "{}"'.format(i+1, post['src']))
+            for k, v in post.items():
+                print('{:<20}:  {}'.format(k, v))
+        print()
+        input('...')
+    
+    # [OPTIONAl] Replace media srcs with SFW alternatives
     if args.safe_for_work:
-        print('[MODE] Replacing SRCs with SWF media ...')
+        print('[MODE] Replacing SRCs with SFW media ...')
         sfw_media_dir = ff.linuxify_path('C:/Users/stirl/Downloads/media')
         gl.media_dirs = [sfw_media_dir] # type: ignore
-        gl.posts = ff.make_posts_swf(gl.posts, sfw_media_dir) # type: ignore
+        gl.posts = ff.make_posts_sfw(gl.posts, sfw_media_dir) # type: ignore
     
-    print('[MAIN] Starting Flask Server ...')
-    port = args.port if args.port else 5002
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+
+    if not args.nostart:
+        print('[MAIN] Starting Flask Server ...')
+        port = args.port if args.port else 5002
+        app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', help='Port to start flask api on', type=int)
     parser.add_argument('-um', '--update_mode', action='store_true', help='Update loaded media when change occurs in media dirs')
-    parser.add_argument('-swf', '--safe_for_work', action='store_true', help='SWF mode, replace post SRCs with SWF media')
+    parser.add_argument('-sfw', '--safe_for_work', action='store_true', help='SFW mode, replace post SRCs with SFW media')
+    parser.add_argument('-nostart', action='store_true', help='Dont start flask server')
+    parser.add_argument('-rme', '--redo-media-extract', action='store_true', help='Redoes extracting (parsing and scanning) of media objects (posts)')
+    
+    parser.add_argument('-print_posts', help='Print post objects before starting server', type=int)
     
     args = parser.parse_args()
     print()

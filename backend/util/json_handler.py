@@ -37,7 +37,9 @@ class JsonHandler:
             self.filepath = os.path.join(self.curdir, filepath)
         filedir = os.path.dirname(self.filepath)
         self.backupdir = os.path.join(filedir, "BAK")
-        self.jsonObject = self.load()
+        self.jsonObject = {}
+        if os.path.exists(filepath):
+            self.jsonObject = self.load()
     
     def addItem(self, key: str, value: Any, nosave: bool=False):
         if self.hasKey(key):
