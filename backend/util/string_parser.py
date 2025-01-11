@@ -1,8 +1,13 @@
 """ 
 CHANGELOG:
 
+2025.01.11
+- Changed tag parsing again, extracts tags from middle of filename
+
 2025.01.10
 - Fixed tag parsing (would return first part split by tag_sep)
+
+
 """
 from typing import Any
 import parse # type: ignore
@@ -62,6 +67,18 @@ class StringParser:
         return None
     
     def extract_tags(self, string: str):
+        tags: list[str] = []
+        parts = string.split(' ')
+        filtered_parts: list[str] = []
+        for p in parts:
+            if p.startswith('#'):
+                tags.append(p)
+            elif p != '':
+                filtered_parts.append(p)
+        return ' '.join(filtered_parts), tags
+    
+    
+    def extract_tags_old(self, string: str):
         tags: list[str] = []
         parts = string.split(self.tags_sep)
         while parts != []:

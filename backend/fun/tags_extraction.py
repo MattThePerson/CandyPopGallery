@@ -39,7 +39,13 @@ def get_metadata_from_file(filepath: str) -> dict[str, Any]:
                             value = parse_tags_string(value)
                             if key == 'tags' or key == 'tags_string':
                                 key = 'tags_general'
-                        metadata[key] = value
+                        if key == 'comment':
+                            comments = metadata.get('comments', [])
+                            new_comments = { 'id': len(comments)+1, 'body': value.replace('"', '') } # type: ignore
+                            comments.append(new_comments)
+                            metadata['comments'] = comments
+                        else:
+                            metadata[key] = value
     return metadata
 
 def parse_tags_string(tags_str: str) -> list[str]:

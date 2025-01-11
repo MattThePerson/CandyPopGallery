@@ -14,7 +14,7 @@ STOPWORDS_ENG = nltk.corpus.stopwords.words('english')
 ### GENERAL FUNCS ###
 
 def get_media_from_dirs(dirs: list[str]) -> list[str]:
-    MEDIA_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.m4v']
+    MEDIA_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm']
     files: list[Path] = []
     for i, base_dir in enumerate(dirs):
         print('Scanning folder ({}/{}) "{}"'.format(i+1, len(dirs), base_dir), end='')
@@ -49,6 +49,37 @@ def get_tags_and_amounts(posts: list[dict[str, Any]]):
     tags:       list[dict[str, int]] =  [ {'name': key, 'amount': value} for key, value in tags_count.items() if (value > 10) ] # type: ignore
     return sources, creators, tags
     # return { "sources": sources_fmt, "creators": creators_fmt, "tags": tags_fmt }
+
+
+# 
+def generate_post_objects(media_objects: list[dict[str, Any]]) -> dict[str, Any]:
+    """ Combine media objects into post objects. """
+    posts: dict[str, Any] = {}
+    
+    for obj in media_objects:
+        post_id = obj.get('post_id', 'None') # 'None' to ignore the fucking strict type checking
+        post: dict[str, Any] | None = posts.get(post_id)
+        if post == None:
+            post = {}
+            for key, value in obj.items():
+                if key not in ['media_id', 'src', 'filename']:
+                    post[key] = value
+            post['media_count'] = 0
+            post['media_objects'] = []
+        
+        new_obj = {
+            'media_id': obj.get('media_id'),
+            'src': obj.get('src'),
+            'filename': obj.get('filename'),
+        }
+        post_media_objects = post.get('media_objects', [])
+        post_media_objects.append(new_obj)
+        post_media_objects.sort(key=lambda obj: obj['media_id']) # type: ignore
+        post['media_objects'] = post_media_objects
+        post['media_count'] += 1
+        posts[post_id] = post
+        
+    return posts
 
 
 def initialize_settings(settingsHandler: JsonHandler):
@@ -113,19 +144,15 @@ def load_media_objects(abs_paths: list[str], media_dirs: list[str], saved_posts:
 
 
 def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringParser):
+    Global_Source_ID = 0
     parents, stem, suffix = path_components(rel_path)
     filename_post_data = parse_data_from_stem(stem, parser)
-    if False and '196i879' in rel_path:
-        print()
-        print(rel_path)
-        for k, v in filename_post_data.items():
-            print('{:<20}:  {}'.format(k, v))
-        input()
     tags_from_file = te.read_tags_from_metadata_file(abs_path, filename_post_data.get('source_id'), filename_post_data.get('secondary_source_id'))
     
     post: dict[str, Any] = {
         # 'idx': idx,
-        'id': None,
+        'post_id': None,
+        'media_id': None,
         'source_id': None,
         'secondary_source_id': None,
         'item_num': 0,
@@ -141,7 +168,6 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
         'likes': -1,
         'date_downloaded': datetime.fromtimestamp(os.path.getmtime(abs_path)).strftime('%Y:%m:%d %H:%M:%S')
     }
-    
     for data_dict in [ filename_post_data, tags_from_file ]:
         if data_dict:
             for k, v in data_dict.items():
@@ -150,10 +176,24 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
         post['source'] = parents[0]
     if post.get('creator') == 'CREATOR_UNKNOWN' and len(parents) > 1:
         post['creator'] = parents[1]
-    post['id'] = get_post_id(post)
-    tags_params = ['source', 'creator', 'author', 'suffix_tags', 'tags_from_title', 'comments_tags', 'tags_artist', 'tags_character', 'tags_copyright', 'tags_general']
-    post['tags'] = make_combined_list_from_params(post, tags_params)
-    post['tags'] = [ t for t in set(post['tags']) if t not in ['[deleted]'] ]
+    if post['source'].lower() == 'reddit':
+        post['subreddit'] = post['creator']
+    if post['source_id'] == None:
+        post['source_id'] = Global_Source_ID
+        Global_Source_ID += 1
+    post['post_id'] = get_post_id(post) # requires source_id
+    post['media_id'] = get_media_id(post)
+
+    # ORGANIZE TAGS
+    meta_tags =     make_combined_list_from_params(post, ['source', 'creator', 'author'])
+    tags =          make_combined_list_from_params(post, ['suffix_tags', 'tags_artist', 'tags_character', 'tags_copyright', 'tags_general', 'custom_tags'])
+    improper_tags = make_combined_list_from_params(post, ['tags_from_title', 'tags_from_content'])
+    
+    ignore_tags = ['[delete]']
+    post['meta_tags'] = [ t for t in set(meta_tags) if t not in ignore_tags ]
+    post['tags'] = [ t for t in set(tags) if t not in ignore_tags ]
+    post['improper_tags'] = [ t for t in set(improper_tags) if t not in ignore_tags ]
+    
     return post
 
 
@@ -174,17 +214,17 @@ def parse_data_from_stem(stem: str, parser: StringParser) -> dict[str, Any]:
 
 # generates tags from title string
 def get_tags_from_title(title: str, remove_stopwords: bool=True) -> list[str]:
-    """ Returns list of tokens from a sentence. Removes stopwords,  """
+    """ Returns list of tokens from a sentence. Removes stopwords """
     tags: list[str] = []
     
-    for c in '-_#':
+    for c in '-_#,()[].;:*':
         title = title.replace(c, ' ')
-    title_chars = [ c for c in title.lower() if c.isalnum() or c == ' ' ]
+    title_chars = [ c for c in title.lower() if c.isalnum() or c == ' ' ] # removes uncommen (non alphanumeric) chars
     title = ''.join(title_chars)
     
     words = [ w for w in title.split() if (len(w) > 2 and len(w) < 20 and not w.isnumeric()) ]
-    if remove_stopwords: words = [ w for w in words if w not in STOPWORDS_ENG ]
-
+    if remove_stopwords:
+        words = [ w for w in words if w not in STOPWORDS_ENG ]
     
     bigram_words = [ '-'.join(bg) for bg in nltk.bigrams(words) ] # type: ignore
     tags = words + bigram_words
@@ -203,11 +243,15 @@ def path_components(path: str) -> Any:
 
 
 # 
-def get_post_id(post_data: dict[str, Any]):
+def get_media_id(post_data: dict[str, Any]):
     id_ = '{}-{}'.format( post_data.get('source'), post_data.get('source_id') )
     num = int(post_data.get('item_num', 0))
     if num > 0:
         id_ = f'{id_}-{num}'
+    return id_
+
+def get_post_id(post_data: dict[str, Any]):
+    id_ = '{}-{}'.format( post_data.get('source'), post_data.get('source_id') )
     return id_
 
 ### HELPERS ###
