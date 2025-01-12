@@ -42,6 +42,7 @@
     .media-component-container {
         display: flex;
         justify-content: center;
+        min-width: 800px;
         width: 70%;
         height: 70vh;
         overflow: hidden;
@@ -81,5 +82,16 @@
 
     .tag.creator { background: purple; }
     .tag.source { background: orange; }
+    .tag.improper { background: rgb(20, 85, 206); }
 
+    /* COMMENTS */
+
+    .comment {
+        padding: 0.3rem 0.6rem;
+        margin: 0.3rem;
+        background: #5553;
+        border-radius: 10px;
+        font-family: sans-serif;
+        font-size: 14px;
+    }
 }

@@ -1,6 +1,7 @@
 import './App.css'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import { makeApiRequestGET_JSON, testApiConnection } from './utils/api'
 import { parseSortbyString, shuffleListWithSeed, sortPostsByParam } from './utils/sort'
@@ -13,9 +14,13 @@ import ControlBar from './components/ControlBar'
 
 function App() {
 
+    
+    
     /* STATE */
 
-    const [posts, setPosts] = useState([])
+    const [posts, setPosts] = useState([]);
+
+    // console.log(posts.slice(0,10));
 
     const [sources, setSources] =   useState(null);
     const [creators, setCreators] = useState(null);
@@ -29,10 +34,63 @@ function App() {
     // reproducible state
     const [selectedSources, setSelectedSources] =   useState<string[]>([]);
     const [selectedCreators, setSelectedCreators] = useState<string[]>([]);
-    const [selectedTags, setSelectedTags] =         useState<string[]>([]);
+    // const [selectedTags, setSelectedTags] =         useState<string[]>([]);
+    const [sortby, setSortby] =                     useState('date-downloaded-desc');
+    const [filterMedia, setFilterMedia] =           useState(['all']);
 
-    const [sortby, setSortby] = useState('date-downloaded-desc');
+    
+    /* HISTORY */
+    
+    const [searchParams, setSearchParams] = useSearchParams(); // Requires BrowserRouter in main.tsx
 
+    const selectedTags: string[] = searchParams.getAll('tags') || [];
+
+    function setSelectedTags(newTags: string[]) {
+        setSearchParams((params) => {
+            return {
+                ...params,
+                tags: newTags,
+            }
+        })
+    }
+
+    const navigate = useNavigate();
+
+    // Sync searchParams with state
+    useEffect(() => {
+        console.log('Making History Over Here!');
+        const params = {
+            media: filterMedia,
+            sort: sortby,
+            sources: selectedSources,
+            creators: selectedCreators,
+            tags: selectedTags,
+        };
+
+        const newSearchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+                value.forEach((v) => newSearchParams.append(key, v));
+            } else {
+                newSearchParams.set(key, value);
+            }
+        });
+        setSearchParams(newSearchParams);
+        navigate(`?${newSearchParams.toString()}`, { replace: true });
+
+    }, [selectedSources, selectedCreators, sortby, filterMedia]);
+
+    // Sync state with searchParams (for history navigation)
+    // useEffect(() => {
+    //     setSelectedSources(searchParams.getAll('sources'));
+    //     setSelectedCreators(searchParams.getAll('creators'));
+    //     // setSelectedTags(searchParams.getAll('tags'));
+    //     setSortby(searchParams.get('sortby') || 'date-downloaded-desc');
+    //     setFilterMedia(searchParams.getAll('media').length ? searchParams.getAll('media') : ['all']);
+    // }, [searchParams]);
+
+    
+    
     /* EFFECTS */
     
     testApiConnection('/',
@@ -64,7 +122,7 @@ function App() {
 
     // sort & filter loaded posts
     useEffect(() => {
-        console.log("useEffect() -> sort posts")
+        // console.log("useEffect() -> sort posts")
         const [sortby_param, sort_descending] = parseSortbyString(sortby);
         let start = performance.now();
         if (posts.length > 0) {
@@ -82,6 +140,8 @@ function App() {
         console.log(`Sorting posts took ${Math.round(performance.now() - start)} ms`)
     }, [sortby]);
 
+
+    
     /* STATE CHANGE HANDLERS */
     
     function handleSortStream(new_sortby: string) {
@@ -105,8 +165,9 @@ function App() {
         }
     }
     
-    // console.log(posts.length);
     
+    
+    /* RETURN */
     return (
         <div className="app">
             <section id="side-bar-section">
