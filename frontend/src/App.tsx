@@ -14,7 +14,10 @@ import ControlBar from './components/ControlBar'
 
 function App() {
 
-    
+    testApiConnection('/',
+        () => setSplash("done"),
+        () => setSplash("no connection :("));
+
     
     /* STATE */
 
@@ -43,7 +46,8 @@ function App() {
     
     const [searchParams, setSearchParams] = useSearchParams(); // Requires BrowserRouter in main.tsx
 
-    const selectedTags: string[] = searchParams.getAll('tags') || [];
+    // const selectedTags: string[] = searchParams.getAll('tags') || [];
+    const [selectedTags, updateSelectedTags] = useState(searchParams.getAll('tags') || []);
 
     function setSelectedTags(newTags: string[]) {
         setSearchParams((params) => {
@@ -52,33 +56,34 @@ function App() {
                 tags: newTags,
             }
         })
+        updateSelectedTags(newTags);
     }
 
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     // Sync searchParams with state
-    useEffect(() => {
-        console.log('Making History Over Here!');
-        const params = {
-            media: filterMedia,
-            sort: sortby,
-            sources: selectedSources,
-            creators: selectedCreators,
-            tags: selectedTags,
-        };
+    // useEffect(() => {
+    //     console.log('Making History Over Here!');
+    //     const params = {
+    //         media: filterMedia,
+    //         sort: sortby,
+    //         sources: selectedSources,
+    //         creators: selectedCreators,
+    //         tags: selectedTags,
+    //     };
 
-        const newSearchParams = new URLSearchParams();
-        Object.entries(params).forEach(([key, value]) => {
-            if (Array.isArray(value)) {
-                value.forEach((v) => newSearchParams.append(key, v));
-            } else {
-                newSearchParams.set(key, value);
-            }
-        });
-        setSearchParams(newSearchParams);
-        navigate(`?${newSearchParams.toString()}`, { replace: true });
+    //     const newSearchParams = new URLSearchParams();
+    //     Object.entries(params).forEach(([key, value]) => {
+    //         if (Array.isArray(value)) {
+    //             value.forEach((v) => newSearchParams.append(key, v));
+    //         } else {
+    //             newSearchParams.set(key, value);
+    //         }
+    //     });
+    //     setSearchParams(newSearchParams);
+    //     navigate(`?${newSearchParams.toString()}`, { replace: true });
 
-    }, [selectedSources, selectedCreators, sortby, filterMedia]);
+    // }, [selectedSources, selectedCreators, sortby, filterMedia]);
 
     // Sync state with searchParams (for history navigation)
     // useEffect(() => {
@@ -93,11 +98,7 @@ function App() {
     
     /* EFFECTS */
     
-    testApiConnection('/',
-        () => setSplash("done"),
-        () => setSplash("no connection :("));
-
-    // request tags and posts
+    // make query
     useEffect(() => {
         setFetchedInfo('loading ...');
         const request_args = {
@@ -118,7 +119,7 @@ function App() {
             setPosts(newPosts);
             setFetchedInfo(`Fetched ${newPosts.length} posts\n(took ${tt} ms)`);
         });
-    }, [selectedSources, selectedCreators, selectedTags]);
+    }, [selectedSources, selectedCreators]);
 
     // sort & filter loaded posts
     useEffect(() => {
