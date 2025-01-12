@@ -11,6 +11,7 @@ import DropdownInput from './components/DropdownInput'
 import SimpleStream from './components/SimpleStream'
 import SimpleGrid from './components/SimpleGrid';
 import ControlBar from './components/ControlBar'
+import DateSideNav from './components/DateSideNav';
 
 
 function App() {
@@ -205,11 +206,7 @@ function App() {
                         </div>
                     </div>
                     <div id="feed-date-nav">
-                        2025
-                        2024
-                        2023
-                        2022
-                        2021
+                        <DateSideNav />
                     </div>
                 </div>
             </section>
@@ -218,3 +215,7 @@ function App() {
 }
 
 export default App
+
+/* 
+./tools/ComponentHandler.sh script ComponentName
+*/

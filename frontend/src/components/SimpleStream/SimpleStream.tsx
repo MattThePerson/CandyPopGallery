@@ -39,7 +39,8 @@ function SimpleStream({ posts, streamLoadState, setStreamLoadState, setSelectedT
             { threshold: 0.5 } // Trigger when 50% of the post is visible
         );
 
-        const postEls = containerRef?.current?.querySelectorAll('.Post');
+        let postEls = [];
+        if (containerRef.current) postEls = containerRef.current.querySelectorAll('.Post');
         // console.log('In useEffect:', postEls.length);
         postEls.forEach((post: any) => observer.observe(post));
 
