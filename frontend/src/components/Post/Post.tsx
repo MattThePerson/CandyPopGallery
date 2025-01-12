@@ -20,7 +20,7 @@ function Post({data, setSelectedTags}: PostProps) {
         <div className="Post">
 
             <div className="post-title-bar">
-                <div className="title">{data.title} </div>
+                <h2 className="title">{data.title} </h2>
                 <div className="date-uploaded">{data.date_uploaded} </div>
             </div>
             <div className="post-body">

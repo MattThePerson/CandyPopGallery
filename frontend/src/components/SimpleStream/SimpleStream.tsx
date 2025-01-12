@@ -76,8 +76,8 @@ function SimpleStream({ posts, streamLoadState, setStreamLoadState, setSelectedT
     }, []);
 
     /* HTML */
-    const postElementsToDisplay = posts.slice(0, streamLoadState.postsLoaded).map((post: any, idx: number) =>
-        <Post key={post.id + '-' + idx} data={post} setSelectedTags={setSelectedTags} />
+    const postElementsToDisplay = posts.slice(0, streamLoadState.postsLoaded).map((post: any) =>
+        <Post key={post.post_id} data={post} setSelectedTags={setSelectedTags} />
     );
 
     return (

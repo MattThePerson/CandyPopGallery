@@ -1,7 +1,7 @@
 import './App.css'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import { makeApiRequestGET_JSON, testApiConnection } from './utils/api'
 import { parseSortbyString, shuffleListWithSeed, sortPostsByParam } from './utils/sort'
@@ -9,6 +9,7 @@ import { parseSortbyString, shuffleListWithSeed, sortPostsByParam } from './util
 import DropdownInput from './components/DropdownInput'
 // import DynamicStream from './components/DynamicStream'
 import SimpleStream from './components/SimpleStream'
+import SimpleGrid from './components/SimpleGrid';
 import ControlBar from './components/ControlBar'
 
 
@@ -18,6 +19,7 @@ function App() {
         () => setSplash("done"),
         () => setSplash("no connection :("));
 
+    const navigate = useNavigate();
     
     /* STATE */
 
@@ -36,23 +38,26 @@ function App() {
 
     const [searchParams, setSearchParams] = useSearchParams(); // Requires BrowserRouter in main.tsx
 
-    const [selectedTags, setSelectedTags] =         useState<string[]>(searchParams.getAll('tags'));
-    const [selectedSources, setSelectedSources] =   useState<string[]>(searchParams.getAll('sources'));
-    const [selectedCreators, setSelectedCreators] = useState<string[]>(searchParams.getAll('creators'));
-
     const sortby_default = 'date-downloaded-desc';
     const filterMedia_default = ['all'];
-    const [sortby, setSortby] =                     useState(searchParams.get('sort') || sortby_default);
-    const [filterMedia, setFilterMedia] =           useState(searchParams.get('media') || filterMedia_default);
+    const viewMode_default = 'list';
 
+    const [selectedTags, setSelectedTags] =         useState<string[]>( searchParams.getAll('tags') );
+    const [selectedSources, setSelectedSources] =   useState<string[]>( searchParams.getAll('sources') );
+    const [selectedCreators, setSelectedCreators] = useState<string[]>( searchParams.getAll('creators') );
+
+    const [sortby, setSortby] =                     useState( searchParams.get('sort') || sortby_default );
+    const [filterMedia, setFilterMedia] =           useState( searchParams.get('media') || filterMedia_default );
+    const [viewMode, setViewMode] =                 useState<string|null>( searchParams.get('view') || viewMode_default );
 
     /* update params functions */
 
-    const updateSelectedTags = (newItems: string[]) =>          updateSearchParams('tags', newItems);
-    const updateSelectedSources = (newItems: string[]) =>       updateSearchParams('sources', newItems);
-    const updateSelectedCreators = (newItems: string[]) =>      updateSearchParams('creators', newItems);
-    const updateSortby = (newItems: string) =>                  updateSearchParams('sort', newItems);
-    const updateFilterMedia = (newItems: string[]) =>           updateSearchParams('media', newItems);
+    const updateSelectedTags = (newValue: string[]) =>          updateSearchParams('tags', newValue);
+    const updateSelectedSources = (newValue: string[]) =>       updateSearchParams('sources', newValue);
+    const updateSelectedCreators = (newValue: string[]) =>      updateSearchParams('creators', newValue);
+    const updateSortby = (newValue: string) =>                  updateSearchParams('sort', newValue);
+    const updateFilterMedia = (newValue: string[]) =>           updateSearchParams('media', newValue);
+    const updateViewMode = (newValue: string) =>                updateSearchParams('view', newValue);
 
     const updateSearchParams = (key: string, value: any) => {
         setSearchParams(prevParams => {
@@ -77,6 +82,7 @@ function App() {
         setStateIfUpdated( searchParams.getAll('creators'),                        selectedCreators, setSelectedCreators );
         setStateIfUpdated( searchParams.get('sort') || sortby_default,             sortby, setSortby );
         setStateIfUpdated( searchParams.getAll('media') || filterMedia_default,    filterMedia, setFilterMedia );
+        setStateIfUpdated( searchParams.get('view') || viewMode_default,           viewMode, setViewMode );
     }, [searchParams]);
     
     
@@ -85,7 +91,7 @@ function App() {
     // make query
     useEffect(() => {
         setFetchedInfo('loading ...');
-        setPosts([]);
+        setPosts([]); setTags(null); setSources(null); setCreators(null); // maybe create resetStates() ?
         setStreamLoadState({ postsLoaded: 5, currentPost: 0 });
         const request_args = {
             sources: selectedSources.map((item: any) => item),
@@ -113,22 +119,24 @@ function App() {
         console.log("useEffect() -> sort posts")
         window.scrollTo({ top: 0 });
         setStreamLoadState({ postsLoaded: 5, currentPost: 0 });
-
-        const [sortby_param, sort_descending] = parseSortbyString(sortby);
-        let start = performance.now();
-        if (posts.length > 0) {
-            console.log("Sorting posts by:", sortby_param, sort_descending)
-            const newPosts = sortPostsByParam(posts, sortby_param, sort_descending);
-            setPosts(newPosts);
-        } else if (sortby_param.startsWith('random')) {
-            console.log("Sorting posts by:", sortby_param, sort_descending)
-            // const seed = '1234';
-            const seed = Math.floor(Math.random()*9999).toString();
-            console.log(seed);
-            const newPosts = shuffleListWithSeed(posts, seed);
-            setPosts(newPosts);
-        }
-        console.log(`Sorting posts took ${Math.round(performance.now() - start)} ms`)
+        setPosts([]);
+        setTimeout(() => { // timeout so ui updates first
+            const [sortby_param, sort_descending] = parseSortbyString(sortby);
+            let start = performance.now();
+            if (posts.length > 0) {
+                console.log("Sorting posts by:", sortby_param, sort_descending)
+                const newPosts = sortPostsByParam(posts, sortby_param, sort_descending);
+                setPosts(newPosts);
+            } else if (sortby_param.startsWith('random')) {
+                console.log("Sorting posts by:", sortby_param, sort_descending)
+                // const seed = '1234';
+                const seed = Math.floor(Math.random()*9999).toString();
+                console.log(seed);
+                const newPosts = shuffleListWithSeed(posts, seed);
+                setPosts(newPosts);
+            }
+            console.log(`Sorting posts took ${Math.round(performance.now() - start)} ms`)
+        }, 1);
     }, [sortby]);
 
 
@@ -162,25 +170,38 @@ function App() {
     
     
     /* RETURN */
+    const getFeed = () => {
+        if (viewMode === 'list') {
+            return (
+                <SimpleStream posts={posts} streamLoadState={streamLoadState} setStreamLoadState={setStreamLoadState} setSelectedTags={handlePostTagClick} />
+            )
+        } else if (viewMode === 'grid') {
+            return (
+                <SimpleGrid posts={posts} streamLoadState={streamLoadState} setStreamLoadState={setStreamLoadState} setSelectedTags={handlePostTagClick} />
+            )
+        }
+    }
+    
     return (
         <div className="app">
             <section id="side-bar-section">
-                <h2>CandyPop Gallery</h2>
-                <div><pre>{fetchedInfo}</pre></div>
+                <h2 onClick={() => navigate('/home')}>CandyPop Gallery</h2>
+                <div style={{height: "2rem"}}><pre>{fetchedInfo}</pre></div>
                 <DropdownInput name="source" options={sources} selectedOptions={selectedSources} updateSelectedOptions={updateSelectedSources} /> {/* key="dropdown-input-source"  */}
                 <DropdownInput name="creator" options={creators} selectedOptions={selectedCreators} updateSelectedOptions={updateSelectedCreators} />
                 <DropdownInput name="tags" options={tags} selectedOptions={selectedTags} updateSelectedOptions={updateSelectedTags} />
+                <button onClick={() => navigate('/settings')}>Settings</button>
             </section>
 
             <section id="main-section">
                 <div id="control-bar">
-                    <ControlBar sortby={sortby} handleSortChange={updateSortby} />
+                    <ControlBar sortby={sortby} handleSortChange={updateSortby} viewMode={viewMode} updateViewMode={updateViewMode} />
                 </div>
                 <div id="content-container">
                     <div id="feed-container">
                         <div className="feed">
                             { (splash !== "done") ? <div className="splash">{splash} </div> : <></> }
-                            <SimpleStream posts={posts} streamLoadState={streamLoadState} setStreamLoadState={setStreamLoadState} setSelectedTags={handlePostTagClick} />
+                            {getFeed()}
                         </div>
                     </div>
                     <div id="feed-date-nav">

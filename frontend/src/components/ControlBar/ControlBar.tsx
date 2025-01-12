@@ -5,10 +5,14 @@ import down_arrow from './assets/down-arrow.svg'
 interface ControlBarProps {
     sortby: string;
     handleSortChange: Function;
+    viewMode: string|null;
+    updateViewMode: Function;
 }
 
-function ControlBar({sortby, handleSortChange}: ControlBarProps) {
+function ControlBar({sortby, handleSortChange, viewMode, updateViewMode}: ControlBarProps) {
 
+    const default_view = 'list';
+    
     function updateSortby(target: HTMLDivElement | any, type: string) {
         const order_button_click = target.classList.contains('order-button');
         const current_order = (sortby.endsWith('-desc')) ? '-desc' : '-asc';
@@ -28,9 +32,11 @@ function ControlBar({sortby, handleSortChange}: ControlBarProps) {
         handleSortChange(newSortby);
     }
 
-    const sortbyTypes = ["date-downloaded", "date-uploaded", "likes", "random"];
+    
+    /* ELEMENTS */
 
-    const sortbyButtons = sortbyTypes.map((type, idx) => {
+    // sortBy buttons
+    const sortbyButtons = ["date-downloaded", "date-uploaded", "likes", "random"].map((type, idx) => {
 
         function getClasses() {
             const classes = ["button"]
@@ -62,6 +68,18 @@ function ControlBar({sortby, handleSortChange}: ControlBarProps) {
         )
     });
     
+    // viewMode buttons
+    const viewButtons = ["list", "grid"].map((type) => {
+        const buttonClasses = ["button"];
+        if (type === viewMode || (viewMode === null && type == default_view))
+            buttonClasses.push('selected');
+        return (
+            <div key={type} className={buttonClasses.join(' ')} onClick={() => updateViewMode(type)}>
+                {type}
+            </div>
+        )
+    })
+    
     return (
         <div className="ControlBar">
             <div className="container">
@@ -71,8 +89,7 @@ function ControlBar({sortby, handleSortChange}: ControlBarProps) {
             <div className="container">
                 <div>view</div>
                 <div className="button">
-                    <div>list</div>
-                    <div>grid</div>
+                    {viewButtons}
                 </div>
             </div>
         </div>
