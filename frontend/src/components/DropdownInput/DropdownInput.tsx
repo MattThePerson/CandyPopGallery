@@ -7,11 +7,11 @@ type DropdownInputProps = {
     name: string,
     options: { name: string; amount: number; }[] | null,
     selectedOptions: string[],
-    setSelectedOptions: Function,
+    updateSelectedOptions: Function,
 }
 
 
-function DropdownInput({ name, options, selectedOptions, setSelectedOptions }: DropdownInputProps) {
+function DropdownInput({ name, options, selectedOptions, updateSelectedOptions }: DropdownInputProps) {
 
     // filter the list of options by the string in the input element
     function filterOptions(value: string) {
@@ -43,13 +43,14 @@ function DropdownInput({ name, options, selectedOptions, setSelectedOptions }: D
     function handleSelect(opt: any) {
         document.getElementById(component_id)!.querySelector('ul')?.classList.remove('show');
         const newSelected = [...selectedOptions, opt.name];
-        setSelectedOptions(newSelected)
+        updateSelectedOptions(newSelected);
     }
 
     // 
     function handleSelectRemove(remove_opt: any) {
         const newSelected = selectedOptions.filter(opt => opt !== remove_opt);
-        setSelectedOptions(newSelected);
+        console.log(newSelected);
+        updateSelectedOptions(newSelected);
     }
     
     

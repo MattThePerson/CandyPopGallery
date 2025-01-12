@@ -1,7 +1,7 @@
 import './App.css'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { makeApiRequestGET_JSON, testApiConnection } from './utils/api'
 import { parseSortbyString, shuffleListWithSeed, sortPostsByParam } from './utils/sort'
@@ -23,8 +23,6 @@ function App() {
 
     const [posts, setPosts] = useState([]);
 
-    // console.log(posts.slice(0,10));
-
     const [sources, setSources] =   useState(null);
     const [creators, setCreators] = useState(null);
     const [tags, setTags] =         useState(null);
@@ -34,66 +32,52 @@ function App() {
     const [splash, setSplash] = useState('connecting ...');
     const [fetchedInfo, setFetchedInfo] = useState<any>('loading ...');
     
-    // reproducible state
-    const [selectedSources, setSelectedSources] =   useState<string[]>([]);
-    const [selectedCreators, setSelectedCreators] = useState<string[]>([]);
-    // const [selectedTags, setSelectedTags] =         useState<string[]>([]);
-    const [sortby, setSortby] =                     useState('date-downloaded-desc');
-    const [filterMedia, setFilterMedia] =           useState(['all']);
+    /* IMPORTANT STATE */
 
-    
-    /* HISTORY */
-    
     const [searchParams, setSearchParams] = useSearchParams(); // Requires BrowserRouter in main.tsx
 
-    // const selectedTags: string[] = searchParams.getAll('tags') || [];
-    const [selectedTags, updateSelectedTags] = useState(searchParams.getAll('tags') || []);
+    const [selectedTags, setSelectedTags] =         useState<string[]>(searchParams.getAll('tags'));
+    const [selectedSources, setSelectedSources] =   useState<string[]>(searchParams.getAll('sources'));
+    const [selectedCreators, setSelectedCreators] = useState<string[]>(searchParams.getAll('creators'));
 
-    function setSelectedTags(newTags: string[]) {
-        setSearchParams((params) => {
-            return {
-                ...params,
-                tags: newTags,
+    const sortby_default = 'date-downloaded-desc';
+    const filterMedia_default = ['all'];
+    const [sortby, setSortby] =                     useState(searchParams.get('sort') || sortby_default);
+    const [filterMedia, setFilterMedia] =           useState(searchParams.get('media') || filterMedia_default);
+
+
+    /* update params functions */
+
+    const updateSelectedTags = (newItems: string[]) =>          updateSearchParams('tags', newItems);
+    const updateSelectedSources = (newItems: string[]) =>       updateSearchParams('sources', newItems);
+    const updateSelectedCreators = (newItems: string[]) =>      updateSearchParams('creators', newItems);
+    const updateSortby = (newItems: string) =>                  updateSearchParams('sort', newItems);
+    const updateFilterMedia = (newItems: string[]) =>           updateSearchParams('media', newItems);
+
+    const updateSearchParams = (key: string, value: any) => {
+        setSearchParams(prevParams => {
+            const newParams = new URLSearchParams(prevParams);
+            newParams.delete(key);
+            if (Array.isArray(value)) {
+                value.forEach(item => newParams.append(key, item));
+            } else {
+                newParams.set(key, value);
             }
-        })
-        updateSelectedTags(newTags);
-    }
+            return newParams;
+        });
+    };
 
-    // const navigate = useNavigate();
-
-    // Sync searchParams with state
-    // useEffect(() => {
-    //     console.log('Making History Over Here!');
-    //     const params = {
-    //         media: filterMedia,
-    //         sort: sortby,
-    //         sources: selectedSources,
-    //         creators: selectedCreators,
-    //         tags: selectedTags,
-    //     };
-
-    //     const newSearchParams = new URLSearchParams();
-    //     Object.entries(params).forEach(([key, value]) => {
-    //         if (Array.isArray(value)) {
-    //             value.forEach((v) => newSearchParams.append(key, v));
-    //         } else {
-    //             newSearchParams.set(key, value);
-    //         }
-    //     });
-    //     setSearchParams(newSearchParams);
-    //     navigate(`?${newSearchParams.toString()}`, { replace: true });
-
-    // }, [selectedSources, selectedCreators, sortby, filterMedia]);
-
-    // Sync state with searchParams (for history navigation)
-    // useEffect(() => {
-    //     setSelectedSources(searchParams.getAll('sources'));
-    //     setSelectedCreators(searchParams.getAll('creators'));
-    //     // setSelectedTags(searchParams.getAll('tags'));
-    //     setSortby(searchParams.get('sortby') || 'date-downloaded-desc');
-    //     setFilterMedia(searchParams.getAll('media').length ? searchParams.getAll('media') : ['all']);
-    // }, [searchParams]);
-
+    // sync app state with search params
+    useEffect(() => {
+        const setStateIfUpdated = (newValue: any, currentValue: any, setterFunc: Function) => 
+            (JSON.stringify(newValue) !== JSON.stringify(currentValue)) ? setterFunc(newValue) : {}
+        
+        setStateIfUpdated( searchParams.getAll('tags'),                            selectedTags, setSelectedTags );
+        setStateIfUpdated( searchParams.getAll('sources'),                         selectedSources, setSelectedSources );
+        setStateIfUpdated( searchParams.getAll('creators'),                        selectedCreators, setSelectedCreators );
+        setStateIfUpdated( searchParams.get('sort') || sortby_default,             sortby, setSortby );
+        setStateIfUpdated( searchParams.getAll('media') || filterMedia_default,    filterMedia, setFilterMedia );
+    }, [searchParams]);
     
     
     /* EFFECTS */
@@ -101,6 +85,8 @@ function App() {
     // make query
     useEffect(() => {
         setFetchedInfo('loading ...');
+        setPosts([]);
+        setStreamLoadState({ postsLoaded: 5, currentPost: 0 });
         const request_args = {
             sources: selectedSources.map((item: any) => item),
             creators: selectedCreators.map((item: any) => item),
@@ -119,11 +105,15 @@ function App() {
             setPosts(newPosts);
             setFetchedInfo(`Fetched ${newPosts.length} posts\n(took ${tt} ms)`);
         });
-    }, [selectedSources, selectedCreators]);
+    }, [selectedSources, selectedCreators, selectedTags]);
+
 
     // sort & filter loaded posts
     useEffect(() => {
-        // console.log("useEffect() -> sort posts")
+        console.log("useEffect() -> sort posts")
+        window.scrollTo({ top: 0 });
+        setStreamLoadState({ postsLoaded: 5, currentPost: 0 });
+
         const [sortby_param, sort_descending] = parseSortbyString(sortby);
         let start = performance.now();
         if (posts.length > 0) {
@@ -145,24 +135,27 @@ function App() {
     
     /* STATE CHANGE HANDLERS */
     
-    function handleSortStream(new_sortby: string) {
-        console.log("Handling sort!");
-        window.scrollTo({ top: 0 });
-        setTimeout(() => {
-            setStreamLoadState({ postsLoaded: 2, currentPost: 0 });
-            setSortby(new_sortby);
-        }, 1);
-    }
+    // function handleSortStream(new_sortby: string) {
+    //     console.log("Handling sort!");
+    //     window.scrollTo({ top: 0 });
+    //     setTimeout(() => {
+    //         setStreamLoadState({ postsLoaded: 2, currentPost: 0 });
+    //         updateSortby(new_sortby);
+    //     }, 1);
+    // }
     
     function handlePostTagClick(tag_type: string, tag_name: string): void {
         console.log("in handlePostTagClick:", tag_type, tag_name);
         switch (tag_type) {
             case "general":
-                setSelectedTags([tag_name]);    setSelectedSources([]);           setSelectedCreators([]); break;
+                updateSelectedTags([tag_name]);
+                break;
             case "source":
-                setSelectedSources([tag_name]); setSelectedCreators([]);          setSelectedTags([]); break;
+                updateSelectedSources([tag_name]);
+                break;
             case "creator":
-                setSelectedSources([]);         setSelectedCreators([tag_name]);  setSelectedTags([]); break;
+                updateSelectedCreators([tag_name]);
+                break;
         }
     }
     
@@ -174,14 +167,14 @@ function App() {
             <section id="side-bar-section">
                 <h2>CandyPop Gallery</h2>
                 <div><pre>{fetchedInfo}</pre></div>
-                <DropdownInput name="source" options={sources} selectedOptions={selectedSources} setSelectedOptions={setSelectedSources} /> {/* key="dropdown-input-source"  */}
-                <DropdownInput name="creator" options={creators} selectedOptions={selectedCreators} setSelectedOptions={setSelectedCreators} />
-                <DropdownInput name="tags" options={tags} selectedOptions={selectedTags} setSelectedOptions={setSelectedTags} />
+                <DropdownInput name="source" options={sources} selectedOptions={selectedSources} updateSelectedOptions={updateSelectedSources} /> {/* key="dropdown-input-source"  */}
+                <DropdownInput name="creator" options={creators} selectedOptions={selectedCreators} updateSelectedOptions={updateSelectedCreators} />
+                <DropdownInput name="tags" options={tags} selectedOptions={selectedTags} updateSelectedOptions={updateSelectedTags} />
             </section>
 
             <section id="main-section">
                 <div id="control-bar">
-                    <ControlBar sortby={sortby} handleSortChange={handleSortStream} />
+                    <ControlBar sortby={sortby} handleSortChange={updateSortby} />
                 </div>
                 <div id="content-container">
                     <div id="feed-container">
