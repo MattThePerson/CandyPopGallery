@@ -54,7 +54,7 @@ body {
 #feed-container {
     padding: 2rem;
     width: 90%;
-    background: #fff1;
+    /* background: #fff1; */
 }
 
 #feed-container .feed {
@@ -65,9 +65,9 @@ body {
 }
 
 #feed-date-nav {
-    width: 4rem;
+    width: 6rem;
     height: 100vh;
-    background: orange;
+    /* background: orange; */
     position: fixed; top: 0; right: 0;
     /* transform: translateY(-1.5rem); */
     margin-top: 2rem;

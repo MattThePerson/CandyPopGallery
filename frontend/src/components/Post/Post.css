@@ -44,7 +44,8 @@
         justify-content: center;
         min-width: 800px;
         width: 70%;
-        height: 70vh;
+        /* height: 70vh; */
+        height: 39rem;
         overflow: hidden;
         background: #0005;
         /* background: yellow; */

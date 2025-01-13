@@ -1,4 +1,50 @@
 
 .DateSideNav {
-    display: inline;
+    display: flex;
+    flex-direction: column;
+    background: rgb(5, 28, 49);
+    width: 100%;
+    height: 100%;
+    padding: 0.5rem;
+    padding-top: 2rem;
+    margin: 0;
+    transform: translateY(-35px);
+
+    * { box-sizing: border-box; }
+
+    span {
+        font-size: 20px;
+        display: flex;
+        /* flex-direction: row-reverse; */
+        align-items: center;
+        justify-content: space-between;
+    }
+    span:hover .count {
+        color: white;
+    }
+
+    .year {
+        /* font-family: sans-serif; */
+        padding: 0 0.1rem;
+    }
+
+    .month {
+        padding: 0 0.5rem;
+        color: rgb(187, 187, 187);
+        font-size: 18px;
+    }
+    
+    button {
+        all: unset;
+        cursor: pointer;
+    }
+    button:hover {
+        text-decoration: underline;
+    }
+    
+    .count {
+        font-size: 16px;
+        color: grey;
+        font-family: sans-serif;
+    }
 }

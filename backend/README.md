@@ -9,6 +9,14 @@
 - Rename TwitterSelenium collection
 - Fix kiriamari2 collection (m4v)
 - reddit scrape comments (half done)
-!- Compare old Reddit (29GB) to new Reddit (20GB)
-!- Format filenames of DWHP
-!- Download that insta page
+- incorporate 3dHent into collection (mdown and rename)
+<!-- - Compare old Reddit (29GB) to new Reddit (20GB) -->
+<!-- - Format filenames of DWHP -->
+<!-- - Download that insta page -->
+
+
+
+### Posts to look at when evaluating tag management
+- reddit-1c4wpan
+- reddit-1i020vu
+

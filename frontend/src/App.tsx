@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import { makeApiRequestGET_JSON, testApiConnection } from './utils/api'
-import { parseSortbyString, shuffleListWithSeed, sortPostsByParam } from './utils/sort'
+import { parseSortbyString, shuffleListWithSeed, sortPostsByParam, filterPostsByParam, computeDateDist } from './utils/array'
 
 import DropdownInput from './components/DropdownInput'
 // import DynamicStream from './components/DynamicStream'
@@ -24,11 +24,13 @@ function App() {
     
     /* STATE */
 
-    const [posts, setPosts] = useState([]);
-
-    const [sources, setSources] =   useState(null);
-    const [creators, setCreators] = useState(null);
-    const [tags, setTags] =         useState(null);
+    const [posts, setPosts] = useState<any[]>([]);
+    const [unfilteredPosts, setUnfilteredPosts] = useState<any[]>([]);
+    const [postDateDist, setPostDateDist] = useState<any[]>([]);
+    
+    const [sources, setSources] =   useState<any[]|null>(null);
+    const [creators, setCreators] = useState<any[]|null>(null);
+    const [tags, setTags] =         useState<any[]|null>(null);
     
     const [streamLoadState, setStreamLoadState] = useState({ postsLoaded: 5, currentPost: 0 });
     
@@ -47,9 +49,12 @@ function App() {
     const [selectedSources, setSelectedSources] =   useState<string[]>( searchParams.getAll('sources') );
     const [selectedCreators, setSelectedCreators] = useState<string[]>( searchParams.getAll('creators') );
 
-    const [sortby, setSortby] =                     useState( searchParams.get('sort') || sortby_default );
-    const [filterMedia, setFilterMedia] =           useState( searchParams.get('media') || filterMedia_default );
+    const [sortby, setSortby] =                     useState<string>( searchParams.get('sort') || sortby_default );
+    const [filterMedia, setFilterMedia] =           useState<string[]>( searchParams.getAll('media') || filterMedia_default );
     const [viewMode, setViewMode] =                 useState<string|null>( searchParams.get('view') || viewMode_default );
+
+    const [feedStartDate, setFeedStartDate] =       useState<string|null>( searchParams.get('start-date') );
+
 
     /* update params functions */
 
@@ -59,6 +64,7 @@ function App() {
     const updateSortby = (newValue: string) =>                  updateSearchParams('sort', newValue);
     const updateFilterMedia = (newValue: string[]) =>           updateSearchParams('media', newValue);
     const updateViewMode = (newValue: string) =>                updateSearchParams('view', newValue);
+    const updateFeedStartDate = (newValue: string|null) =>      updateSearchParams('start-date', newValue);
 
     const updateSearchParams = (key: string, value: any) => {
         setSearchParams(prevParams => {
@@ -66,7 +72,7 @@ function App() {
             newParams.delete(key);
             if (Array.isArray(value)) {
                 value.forEach(item => newParams.append(key, item));
-            } else {
+            } else if (value != null) {
                 newParams.set(key, value);
             }
             return newParams;
@@ -78,12 +84,13 @@ function App() {
         const setStateIfUpdated = (newValue: any, currentValue: any, setterFunc: Function) => 
             (JSON.stringify(newValue) !== JSON.stringify(currentValue)) ? setterFunc(newValue) : {}
         
-        setStateIfUpdated( searchParams.getAll('tags'),                            selectedTags, setSelectedTags );
-        setStateIfUpdated( searchParams.getAll('sources'),                         selectedSources, setSelectedSources );
-        setStateIfUpdated( searchParams.getAll('creators'),                        selectedCreators, setSelectedCreators );
-        setStateIfUpdated( searchParams.get('sort') || sortby_default,             sortby, setSortby );
-        setStateIfUpdated( searchParams.getAll('media') || filterMedia_default,    filterMedia, setFilterMedia );
-        setStateIfUpdated( searchParams.get('view') || viewMode_default,           viewMode, setViewMode );
+        setStateIfUpdated( searchParams.getAll('tags'),                             selectedTags, setSelectedTags );
+        setStateIfUpdated( searchParams.getAll('sources'),                          selectedSources, setSelectedSources );
+        setStateIfUpdated( searchParams.getAll('creators'),                         selectedCreators, setSelectedCreators );
+        setStateIfUpdated( searchParams.get('sort') || sortby_default,              sortby, setSortby );
+        setStateIfUpdated( searchParams.getAll('media') || filterMedia_default,     filterMedia, setFilterMedia );
+        setStateIfUpdated( searchParams.get('view') || viewMode_default,            viewMode, setViewMode );
+        setStateIfUpdated( searchParams.get('start-date'),                          feedStartDate, setFeedStartDate );
     }, [searchParams]);
     
     
@@ -91,9 +98,10 @@ function App() {
     
     // make query
     useEffect(() => {
-        setFetchedInfo('loading ...');
-        setPosts([]); setTags(null); setSources(null); setCreators(null); // maybe create resetStates() ?
+        setFetchedInfo('Fetching posts ...');
+        setPosts([]);
         setStreamLoadState({ postsLoaded: 5, currentPost: 0 });
+        setTags(null);  setSources(null);  setCreators(null);
         const request_args = {
             sources: selectedSources.map((item: any) => item),
             creators: selectedCreators.map((item: any) => item),
@@ -104,11 +112,10 @@ function App() {
         makeApiRequestGET_JSON('make-query', request_args, (res: any) => {
             let tt = Math.round(performance.now() - start);
             console.log(`API call took ${tt} ms`)
-            setSources(res.sources);
-            setCreators(res.creators);
-            setTags(res.tags);
+            setSources(res.sources);  setCreators(res.creators);  setTags(res.tags);
             const [sortby_param, sort_descending] = parseSortbyString(sortby);
             const newPosts = sortPostsByParam(res.posts, sortby_param, sort_descending);
+            setUnfilteredPosts(newPosts);
             setPosts(newPosts);
             setFetchedInfo(`Fetched ${newPosts.length} posts\n(took ${tt} ms)`);
         });
@@ -118,9 +125,9 @@ function App() {
     // sort & filter loaded posts
     useEffect(() => {
         console.log("useEffect() -> sort posts")
-        window.scrollTo({ top: 0 });
-        setStreamLoadState({ postsLoaded: 5, currentPost: 0 });
         setPosts([]);
+        setStreamLoadState({ postsLoaded: 5, currentPost: 0 });
+        updateFeedStartDate(undefined);
         setTimeout(() => { // timeout so ui updates first
             const [sortby_param, sort_descending] = parseSortbyString(sortby);
             let start = performance.now();
@@ -140,7 +147,31 @@ function App() {
         }, 1);
     }, [sortby]);
 
+    // feed start date
+    useEffect(() => {
+        if (sortby.includes('date') && feedStartDate != null) {
+            setPosts([]);
+            setStreamLoadState({ postsLoaded: 5, currentPost: 0 });
+            const [sortby_param, sort_descending] = parseSortbyString(sortby);
+            console.log("Filtering posts by:", sortby, "from:", feedStartDate);
+            console.log("len of unfiltered posts:", unfilteredPosts.length);
+            const filteredPosts = filterPostsByParam(unfilteredPosts, sortby_param, sort_descending, feedStartDate);
+            console.log(filteredPosts);
+            setPosts(filteredPosts);
+        }
+    }, [feedStartDate]);
 
+
+    // compute date dist
+    useEffect(() => {
+        if (sortby.includes('date')) {
+            const [sortby_param, sort_descending] = parseSortbyString(sortby);
+            const newDateDist = computeDateDist(posts, sortby_param, sort_descending);
+            setPostDateDist(newDateDist);
+        }
+    }, [posts]);
+    
+    
     
     /* STATE CHANGE HANDLERS */
     
@@ -157,7 +188,7 @@ function App() {
         console.log("in handlePostTagClick:", tag_type, tag_name);
         switch (tag_type) {
             case "general":
-                updateSelectedTags([tag_name]);
+                updateSelectedTags([tag_name]); // will replace tags, fix!
                 break;
             case "source":
                 updateSelectedSources([tag_name]);
@@ -206,7 +237,7 @@ function App() {
                         </div>
                     </div>
                     <div id="feed-date-nav">
-                        <DateSideNav />
+                        <DateSideNav dateDist={postDateDist} updateFeedStartDate={updateFeedStartDate} />
                     </div>
                 </div>
             </section>
@@ -215,7 +246,3 @@ function App() {
 }
 
 export default App
-
-/* 
-./tools/ComponentHandler.sh script ComponentName
-*/
