@@ -1,18 +1,18 @@
 import os
 from pathlib import Path
 from typing import Any
-from util.json_handler import JsonHandler
 from util.string_parser import StringParser
 from datetime import datetime
 import nltk # type: ignore
-import fun.tags_extraction as te
+import fun.metadata as te
 
 nltk.download('stopwords') # type: ignore
 STOPWORDS_ENG = nltk.corpus.stopwords.words('english')
 
 
-### GENERAL FUNCS ###
+#### EXPORT ####
 
+# 
 def get_media_from_dirs(dirs: list[str]) -> list[str]:
     MEDIA_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm']
     files: list[Path] = []
@@ -25,30 +25,25 @@ def get_media_from_dirs(dirs: list[str]) -> list[str]:
             print('  ... found {:_} media'.format(len(newfiles)))
             files.extend(newfiles) # type: ignore
     files_str = [ str(f) for f in files if (f.suffix in MEDIA_EXTENSIONS) ]
+    files_str = [ f for f in files_str if os.path.getsize(f) >= 1024 ] # filter filesize
     return files_str
 
 
-# gets list of tags their occurance amounts
-def get_tags_and_amounts(posts: list[dict[str, Any]]):
-    sources_count: dict[str, int] = {}
-    creators_count: dict[str, int] = {}
-    tags_count: dict[str, int] = {}
-    for post in posts:
-        source = post.get('source')
-        if source and isinstance(source, str):
-            sources_count[source] = sources_count.get(source, 0) + 1
-        creator = post.get('creator')
-        if creator and isinstance(creator, str):
-            creators_count[creator] = creators_count.get(creator, 0) + 1
-        post_tags: list[str] = post.get('tags', [])
-        if post_tags and isinstance(post_tags, list): # type: ignore
-            for tag in post_tags:
-                tags_count[tag] = tags_count.get(tag, 0) + 1
-    sources:    list[dict[str, int]] =  [ {'name': key, 'amount': value} for key, value in sources_count.items() ] # type: ignore
-    creators:   list[dict[str, int]] =  [ {'name': key, 'amount': value} for key, value in creators_count.items() ] # type: ignore
-    tags:       list[dict[str, int]] =  [ {'name': key, 'amount': value} for key, value in tags_count.items() if (value > 10) ] # type: ignore
-    return sources, creators, tags
-    # return { "sources": sources_fmt, "creators": creators_fmt, "tags": tags_fmt }
+
+# 
+def load_media_objects(abs_paths: list[str], media_dirs: list[str], saved_posts: dict[str, Any], parser: StringParser, redo: bool=False) -> dict[str, Any]:
+    posts_dict: dict[str, Any] = {}
+    for idx, abs_path in enumerate(abs_paths):
+        media_dir = next((f for f in media_dirs if abs_path.startswith(f)), '')
+        rel_path = abs_path.replace(media_dir, '')
+        print('\rLoading posts ({:_}/{:_}) ({:.1f}%)'.format( idx+1, len(abs_paths), ((idx+1)/len(abs_paths)*100) ), end='')
+        if not redo and rel_path in saved_posts:
+            post = saved_posts.get(rel_path)
+        else:
+            post = extract_media_data(idx, rel_path, abs_path, parser)
+        posts_dict[rel_path] = post
+    print()
+    return posts_dict
 
 
 # 
@@ -82,67 +77,26 @@ def generate_post_objects(media_objects: list[dict[str, Any]]) -> dict[str, Any]
     return posts
 
 
-def initialize_settings(settingsHandler: JsonHandler):
-    settingsHandler.setValue('media_folders', [])
-    settingsHandler.setValue('filename_formats', [])
+
+# 
+def make_posts_sfw(posts: dict[str, Any], sfw_media_dir: str):
+    import random
+    sfw_media = get_media_from_dirs([sfw_media_dir])
+    sfw_media = [ f.replace(sfw_media_dir, '') for f in sfw_media ]
+    random.shuffle(sfw_media)
+    i = 0
+    for post in posts.values():
+        post['src'] = sfw_media[i]
+        i += 1
+        if i >= len(sfw_media):
+            i = 0
+            random.shuffle(sfw_media)
+    return posts
 
 
-### POST FILTERING ###
+#### INTERNAL ####
 
-def filter_posts(posts: list[Any], args: dict[str, str]) -> list[Any]:
-
-    if len(posts) == 0:
-        return []
-    
-    sources =   [ t for t in args['sources'].split(',')     if t != '' ]
-    creators =  [ t for t in args['creators'].split(',')    if t != '' ]
-    tags =      [ t for t in args['tags'].split(',')        if t != '' ]
-
-    # print(creators)
-
-    filtered = posts.copy()
-    filtered = [ p for p in filtered if sources == [] or p.get('source') in sources ]
-    filtered = [ p for p in filtered if creators == [] or p.get('creator') in creators ]
-    if args.get('tags_combine', '') == '&':
-        filtered = [ p for p in filtered if tags == [] or containsAll(p.get('tags', []), tags) ]
-    else:
-        filtered = [ p for p in filtered if tags == [] or containsAny(p.get('tags', []), tags) ]
-    return filtered
-
-
-def containsAll(A: list[str], B: list[str]) -> bool:
-    """ Returns True IFF list A contains all elements of list B """
-    for x in B:
-        if x not in A:
-            return False
-    return True
-
-
-def containsAny(A: list[str], B: list[str]) -> bool:
-    """ Returns True IFF list A contains any elements of list B """
-    for x in B:
-        if x in A:
-            return True
-    return False
-
-
-# POST PROCESSING
-
-def load_media_objects(abs_paths: list[str], media_dirs: list[str], saved_posts: dict[str, Any], parser: StringParser, redo: bool=False) -> dict[str, Any]:
-    posts_dict: dict[str, Any] = {}
-    for idx, abs_path in enumerate(abs_paths):
-        media_dir = next((f for f in media_dirs if abs_path.startswith(f)), '')
-        rel_path = abs_path.replace(media_dir, '')
-        print('\rLoading posts ({:_}/{:_}) ({:.1f}%)'.format( idx+1, len(abs_paths), ((idx+1)/len(abs_paths)*100) ), end='')
-        if not redo and rel_path in saved_posts:
-            post = saved_posts.get(rel_path)
-        else:
-            post = extract_media_data(idx, rel_path, abs_path, parser)
-        posts_dict[rel_path] = post
-    print()
-    return posts_dict
-
-
+# 
 def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringParser):
     Global_Source_ID = 0
     parents, stem, suffix = path_components(rel_path)
@@ -157,6 +111,7 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
         'secondary_source_id': None,
         'item_num': 0,
         'src': rel_path,
+        'url': None,
         'source': 'SOURCE_UNKNOWN',
         'creator': 'CREATOR_UNKNOWN',
         'author': None,
@@ -172,10 +127,14 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
         if data_dict:
             for k, v in data_dict.items():
                 post[k] = v
+    if 'upvotes' in post:
+        post['likes'] = post['upvotes']
     if post.get('source') == 'SOURCE_UNKNOWN' and len(parents) > 0:
         post['source'] = parents[0]
     if post.get('creator') == 'CREATOR_UNKNOWN' and len(parents) > 1:
         post['creator'] = parents[1]
+        if 'reddit' in post['source'] and not post['creator'].startswith('u_'):
+            post['creator'] = 'r/' + post['creator']
     if post['source'].lower() == 'reddit':
         post['subreddit'] = post['creator']
     if post['source_id'] == None:
@@ -183,15 +142,20 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
         Global_Source_ID += 1
     post['post_id'] = get_post_id(post) # requires source_id
     post['media_id'] = get_media_id(post)
+    post['url'] = get_post_url(post)
+    for key in ['likes', 'views']:
+        if key in post:
+            post[key] = int(post[key])
 
     # ORGANIZE TAGS
-    meta_tags =     make_combined_list_from_params(post, ['source', 'creator', 'author'])
-    tags =          make_combined_list_from_params(post, ['suffix_tags', 'tags_artist', 'tags_character', 'tags_copyright', 'tags_general', 'custom_tags'])
+    meta_tags =     make_combined_list_from_params(post, ['source', 'creator', 'author', 'artist'])
+    proper_tags =   make_combined_list_from_params(post, 
+                        ['suffix_tags', 'tags_artist', 'tags_character', 'tags_copyright', 'tags_general', 'custom_tags', 'categories', 'pornstars', 'characters', 'sources'])
     improper_tags = make_combined_list_from_params(post, ['tags_from_title', 'tags_from_content'])
     
     ignore_tags = ['[delete]']
     post['meta_tags'] = [ t for t in set(meta_tags) if t not in ignore_tags ]
-    post['tags'] = [ t for t in set(tags) if t not in ignore_tags ]
+    post['proper_tags'] = [ t for t in set(proper_tags) if t not in ignore_tags ]
     post['improper_tags'] = [ t for t in set(improper_tags) if t not in ignore_tags ]
     
     return post
@@ -210,7 +174,6 @@ def parse_data_from_stem(stem: str, parser: StringParser) -> dict[str, Any]:
     del data['tags']
     data['tags_from_title'] = get_tags_from_title(data.get('title', ''))
     return data
-
 
 # generates tags from title string
 def get_tags_from_title(title: str, remove_stopwords: bool=True) -> list[str]:
@@ -232,14 +195,16 @@ def get_tags_from_title(title: str, remove_stopwords: bool=True) -> list[str]:
     return tags
 
 
-# gets the components of a path (parent, stem and suffix)
-def path_components(path: str) -> Any:
-    from pathlib import Path
-    obj = Path(path)
-    stem = obj.stem
-    suffix = obj.suffix
-    parents = [ p for p in str(obj.parent).split('/') if p != '' ]
-    return parents, stem, suffix
+
+# 
+def get_media_type(suff: str) -> str:
+    if suff.lower() in ['.gif']: # HUOM: Some 'webp' can be gifs!!
+        return 'gif'
+    elif suff.lower() in ['.jpg', '.jpeg', '.png', '.webp']:
+        return 'image'
+    elif suff.lower() in ['.mp4', '.webm']:
+        return 'video'
+    return 'UNKNOWN_MEDIA'
 
 
 # 
@@ -254,53 +219,35 @@ def get_post_id(post_data: dict[str, Any]):
     id_ = '{}-{}'.format( post_data.get('source'), post_data.get('source_id') )
     return id_
 
-### HELPERS ###
-
-def linuxify_path(path: str) -> str:
-    """ Incase script in in WSL and media referenced on Windows path, converts media to WSL path (/mnt/...) """
-    if ':' in path:
-        parts = path.split(':')
-        path = '/mnt/' + parts[0].lower() + parts[1]
-    return path
-
-
-def filter_strings(strings: list[str], filters_str: str, union_mode: bool) -> list[str]:
-    filters = [ p.strip() for p in filters_str.lower().split(',') if p != '' ]
-    if not union_mode:
-        for filt in filters:
-            strings = [ pth for pth in strings if filt in pth.lower() ]
-    else:
-        cumulative: list[str] = []
-        for filt in filters:
-            cumulative.extend([ pth for pth in strings if filt in pth.lower() ])
-        strings = cumulative
-    return strings
+def get_post_url(post_data: dict[str, Any]):
+    site_format: dict[str|None, Any] = {
+        'reddit': 'https://www.reddit.com/r/_/comments/{}',
+        'redgifs': 'https://www.redgifs.com/watch/{}',
+        'twitter': 'https://x.com/_/status/{}',
+        'bluesky': '',
+        'instagram': 'https://www.instagram.com/_/p/{}',
+        '3dhentai': '',
+        'danbooru': '',
+        'rule34': ''
+    }
+    source, source_id = post_data.get('source'), post_data.get('source_id')
+    url_format = site_format.get(source)
+    if url_format and source_id:
+        url = url_format.format(source_id)
+        return url
+    return None
 
 
-def get_media_type(suff: str) -> str:
-    if suff.lower() in ['.gif']: # HUOM: Some 'webp' can be gifs!!
-        return 'gif'
-    elif suff.lower() in ['.jpg', '.jpeg', '.png', '.webp']:
-        return 'image'
-    elif suff.lower() in ['.mp4', '.webm']:
-        return 'video'
-    return 'UNKNOWN_MEDIA'
+#### INTERNAL HELPERS ####
 
-
-def make_posts_sfw(posts: dict[str, Any], sfw_media_dir: str):
-    import random
-    sfw_media = get_media_from_dirs([sfw_media_dir])
-    sfw_media = [ f.replace(sfw_media_dir, '') for f in sfw_media ]
-    random.shuffle(sfw_media)
-    i = 0
-    for post in posts.values():
-        post['src'] = sfw_media[i]
-        i += 1
-        if i >= len(sfw_media):
-            i = 0
-            random.shuffle(sfw_media)
-    return posts
-
+# gets the components of a path (parent, stem and suffix)
+def path_components(path: str) -> Any:
+    from pathlib import Path
+    obj = Path(path)
+    stem = obj.stem
+    suffix = obj.suffix
+    parents = [ p for p in str(obj.parent).split('/') if p != '' ]
+    return parents, stem, suffix
 
 def make_combined_list_from_params(obj: dict[str, Any], param_list: list[str]) -> list[str]:
     arr: list[str] = []

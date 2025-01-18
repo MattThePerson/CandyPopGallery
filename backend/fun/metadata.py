@@ -21,6 +21,8 @@ def read_tags_from_metadata_file(abs_path: str, _id: str|None, sec_id: str|None=
         for k, v in metadata_sec.items():
             if k not in metadata:
                 metadata[k] = v
+            elif isinstance(metadata[k], list):
+                metadata[k].extend(v)
     
     return metadata
 
@@ -35,10 +37,10 @@ def get_metadata_from_file(filepath: str) -> dict[str, Any]:
                     key = parts[0]
                     value = '='.join(parts[1:])
                     if value != 'None':
-                        if 'tags' in key:
+                        if '["' in value or "['" in value or value == '[]':
                             value = parse_tags_string(value)
-                            if key == 'tags' or key == 'tags_string':
-                                key = 'tags_general'
+                        if key == 'tags' or key == 'tags_string':
+                            key = 'tags_general'
                         if key == 'comment':
                             comments = metadata.get('comments', [])
                             new_comments = { 'id': len(comments)+1, 'body': value.replace('"', '') } # type: ignore

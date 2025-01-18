@@ -7,7 +7,11 @@ import os
 import time
 from util.json_handler import JsonHandler
 from util.string_parser import StringParser
-import fun.FlaskFunctions as ff
+import fun.flask_functions as ff
+import fun.load as load
+import fun.processing as proc
+
+
 
 
 app = Flask(__name__)
@@ -19,11 +23,27 @@ def API_home():
     return jsonify({'message': 'Hello, CORS enabled!'}), 200
 
 
+""" 
+Send posts with only following params:
+- post_id
+- source_id
+- source
+- creator
+- media_type
+- date_downloaded
+- date_uploaded
+- likes
+- views
+- upvote_ratio
+- title
+- media_count
+- cover_src (the src of first media object)
+"""
 @app.route("/make-query")
 def API_make_query():
     # gl.last_request = request.args
-    filtered = ff.filter_posts(list(gl.posts.values()), request.args)
-    sources_fmt, creators_fmt, tags_fmt = ff.get_tags_and_amounts(filtered)
+    filtered = proc.filter_posts(list(gl.posts.values()), request.args)
+    sources_fmt, creators_fmt, tags_fmt = proc.get_tags_and_amounts(filtered)
     return jsonify({
         'posts': filtered,
         'sources': sources_fmt,
@@ -62,20 +82,25 @@ class NameSpace:
 gl = NameSpace()
 
 
-# MAIN
+
+
+##############
+#### MAIN ####
+##############
+
 def main(args: argparse.Namespace):
 
     # read settings
     if gl.settings.isEmpty():
         ff.initialize_settings(gl.settings)
     
-    gl.media_dirs = [ ff.linuxify_path(f) for f in gl.settings.getValue('media_folders') ]
+    gl.media_dirs = [ ff.linuxify_path(f) for f in gl.settings.getValue('media_folders') if not f.startswith('!') ]
     gl.filename_parser = StringParser(gl.settings.getValue('filename_formats'))
 
     # scan dirs for posts
     print('[MAIN:SCAN] Fetching media from media folders ...')
     start = time.time()
-    media_paths: list[str] = ff.get_media_from_dirs(gl.media_dirs)
+    media_paths: list[str] = load.get_media_from_dirs(gl.media_dirs)
     print('[MAIN:SCAN] Loaded {:_} media from {} base folders in {:.1f} sec'.format(len(media_paths), len(gl.media_dirs), time.time()-start))
     
     # filter media
@@ -85,7 +110,7 @@ def main(args: argparse.Namespace):
     # generate media objects from media paths
     print('[MAIN:PROCESS] Generating post objects for {:_} media ...'.format(len(media_paths)))
     start = time.time()
-    gl.media_objects = ff.load_media_objects(media_paths, gl.media_dirs, gl.saved_media_objects.jsonObject, gl.filename_parser, redo=args.redo_media_extract)
+    gl.media_objects = load.load_media_objects(media_paths, gl.media_dirs, gl.saved_media_objects.jsonObject, gl.filename_parser, redo=args.redo_media_extract)
     print('saving posts ...')
     for src, post in gl.media_objects.items():
         gl.saved_media_objects.setValue(src, post, nosave=True)
@@ -113,10 +138,10 @@ def main(args: argparse.Namespace):
         print('[MODE] Replacing SRCs with SFW media ...')
         sfw_media_dir = ff.linuxify_path('C:/Users/stirl/Downloads/media')
         gl.media_dirs = [sfw_media_dir] # type: ignore
-        gl.media_objects = ff.make_posts_sfw(gl.media_objects, sfw_media_dir) # type: ignore
+        gl.media_objects = load.make_posts_sfw(gl.media_objects, sfw_media_dir) # type: ignore
     
     # generate posts from media objects (basically combine media from same post)
-    gl.posts = ff.generate_post_objects(list(gl.media_objects.values()))
+    gl.posts = load.generate_post_objects(list(gl.media_objects.values()))
     
     if not args.nostart:
         print('[MAIN] Starting Flask Server ...')
