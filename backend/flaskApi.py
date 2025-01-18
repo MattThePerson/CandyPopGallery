@@ -52,12 +52,12 @@ def API_make_query():
     }), 200
     
 
-@app.route('/media/<path:filename>')
-def API_get_media(filename: str):
+@app.route('/media/<path:rel_path>')
+def API_get_media(rel_path: str):
     for mediadir in gl.media_dirs:
-        if os.path.exists( os.path.join(mediadir, filename) ):
-            return send_from_directory(mediadir, filename)
-    print('[WARNING] Media not found in {} mediadirs "{}"'.format(len(gl.media_dirs),filename))
+        if os.path.exists( os.path.join(mediadir, rel_path) ):
+            return send_from_directory(mediadir, rel_path)
+    print('[WARNING] Media not found in {} mediadirs "{}"'.format(len(gl.media_dirs), rel_path))
     return send_from_directory('...', '...')
 
 
@@ -90,6 +90,8 @@ gl = NameSpace()
 
 def main(args: argparse.Namespace):
 
+    load.load_nltk()
+
     # read settings
     if gl.settings.isEmpty():
         ff.initialize_settings(gl.settings)
@@ -108,14 +110,14 @@ def main(args: argparse.Namespace):
         media_paths = ff.filter_strings(media_paths, args.filters, args.union_mode)
     
     # generate media objects from media paths
-    print('[MAIN:PROCESS] Generating post objects for {:_} media ...'.format(len(media_paths)))
+    print('[MAIN:LOAD] Generating post objects for {:_} media ...'.format(len(media_paths)))
     start = time.time()
     gl.media_objects = load.load_media_objects(media_paths, gl.media_dirs, gl.saved_media_objects.jsonObject, gl.filename_parser, redo=args.redo_media_extract)
     print('saving posts ...')
     for src, post in gl.media_objects.items():
         gl.saved_media_objects.setValue(src, post, nosave=True)
     gl.saved_media_objects.save()
-    print('[MAIN:PROCESS] Done. Took {:.1f} sec'.format(time.time()-start))
+    print('[MAIN:LOAD] Done. Took {:.1f} sec'.format(time.time()-start))
     
     # PRINT OUT POST OBJECTS (AND PAUSE) ##
     if args.print_posts:
@@ -164,6 +166,7 @@ if __name__ == '__main__':
     parser.add_argument('-union_mode', action='store_true', help='Union mode for filters (default: intercect mode)')
     
     args = parser.parse_args()
+    print(args)
     print()
     try:
         main(args)

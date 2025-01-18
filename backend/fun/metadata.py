@@ -1,60 +1,70 @@
 from typing import Any
-from pathlib import Path
 import os
-import ast
+from pathlib import Path
+import json
 
 
-# 
-def read_tags_from_metadata_file(abs_path: str, _id: str|None, sec_id: str|None=None) -> dict[str, Any]:
-
-    if _id == None:
-        return {}
-
-    dirname = str(Path(abs_path).parent)
-    
-    filepath = dirname + f'/{_id}.txt'
-    metadata: dict[str, Any] = get_metadata_from_file(filepath)
-    
-    if sec_id:
-        filepath = dirname + f'/{sec_id}.txt'
-        metadata_sec: dict[str, Any] = get_metadata_from_file(filepath)
-        for k, v in metadata_sec.items():
-            if k not in metadata:
-                metadata[k] = v
-            elif isinstance(metadata[k], list):
-                metadata[k].extend(v)
-    
-    return metadata
+def metadata_load(filepath: str, id_format: str='{}[{id:S}]', use_shared_metadata: bool=True) -> dict[str, Any]:
+    """ Loads metadata for given filepath and id_format. Looks for .json file called '<id>.json' in same folder, '.metadata' folder, repeats for parent directory. """
+    obj = Path(filepath)
+    if not obj.is_file():
+        raise Exception('filepath is not a file')
+    result: Any = parse.parse(id_format, str(obj.stem)) # type: ignore
+    if result == None:
+        raise Exception('Unable to parse filename with id_format "{}"'.format(id_format))
+    file_id = result.named.get('id')
+    if file_id == None:
+        raise Exception('No "id" attribute extracted from filename with id_format "{}"'.format(id_format))
+    return metadata_load_with_id(filepath, file_id, use_shared_metadata=use_shared_metadata)
 
 
-def get_metadata_from_file(filepath: str) -> dict[str, Any]:
-    metadata: dict[str, Any] = {}
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as f:
-            for line in f:
-                parts = line.strip().split('=')
-                if len(parts) >= 2:
-                    key = parts[0]
-                    value = '='.join(parts[1:])
-                    if value != 'None':
-                        if '["' in value or "['" in value or value == '[]':
-                            value = parse_tags_string(value)
-                        if key == 'tags' or key == 'tags_string':
-                            key = 'tags_general'
-                        if key == 'comment':
-                            comments = metadata.get('comments', [])
-                            new_comments = { 'id': len(comments)+1, 'body': value.replace('"', '') } # type: ignore
-                            comments.append(new_comments)
-                            metadata['comments'] = comments
-                        else:
-                            metadata[key] = value
-    return metadata
+def metadata_load_with_id(path: str, file_id: str, use_shared_metadata: bool=True) -> dict[str, Any]:
+    """ Loads metadata for given filepath and id. Looks for .json file called '<id>.json' in same folder, '.metadata' folder, repeats for parent directory. """
+    obj = Path(path)
+    if obj.is_file():
+        obj = obj.parent
+    parts = str(obj).split(os.sep)
+    if ':' in parts[0]: # Windows
+        parts[0] += os.sep
+    elif parts[0] == '': # Linux
+        parts[0] = os.sep
+    metadata_fn = f'{file_id}.json'
+    dirs: list[str] = []
+    while parts != []:
+        dirs.append(os.path.join(*parts))
+        dirs.append(os.path.join(*parts, '.metadata'))
+        parts.pop()
+    data: dict[str, Any] = {}
+    for parent in dirs:
+        fp = os.path.join(parent, metadata_fn)
+        if os.path.exists(fp):
+            data = read_json_file(fp)
+            break
+    if use_shared_metadata:
+        for parent in dirs:
+            fp = os.path.join(parent, '.metadata.json')
+            if os.path.exists(fp):
+                data_shared = read_json_file(fp)
+                data = combine_metadata(data, data_shared)
+    return data
 
-def parse_tags_string(tags_str: str) -> list[str]:
-    try:
-        tags: list[str] = ast.literal_eval(tags_str)
-        if isinstance(tags, list): # type: ignore
-            return tags
-    except:
-        return tags_str.split()
 
+def read_json_file(path: str):
+    with open(path, 'r') as f:
+        data = json.load(f)
+    return data
+
+def combine_metadata(d1: dict[str, Any], d2: dict[str, Any], overwrite_nonlist: bool=False) -> dict[str, Any]:
+    d = { k: v for k, v in d1.items() }
+    for k, v in d2.items():
+        ev = d.get(k)
+        if ev == None:
+            d[k] = v
+        elif isinstance(ev, list):
+            if not isinstance(v, list):
+                raise Exception('combine_dicts(): mismatched dict value types')
+            combined: list[Any] = ev + v
+            d[k] = combined
+        elif overwrite_nonlist:
+            d[k] = v
+    return d

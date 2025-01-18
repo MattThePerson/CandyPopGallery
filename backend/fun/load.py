@@ -3,14 +3,22 @@ from pathlib import Path
 from typing import Any
 from util.string_parser import StringParser
 from datetime import datetime
+from fun.metadata import metadata_load_with_id, combine_metadata
+from fun.metadata_standardize import standardize_metadata
+
 import nltk # type: ignore
-import fun.metadata as te
 
-nltk.download('stopwords') # type: ignore
-STOPWORDS_ENG = nltk.corpus.stopwords.words('english')
-
+Global_Stopwords_End = []
+Global_Source_ID = 0
 
 #### EXPORT ####
+
+# 
+def load_nltk():
+    global Global_Stopwords_End
+    nltk.download('stopwords') # type: ignore
+    Global_Stopwords_End = nltk.corpus.stopwords.words('english')
+
 
 # 
 def get_media_from_dirs(dirs: list[str]) -> list[str]:
@@ -25,7 +33,7 @@ def get_media_from_dirs(dirs: list[str]) -> list[str]:
             print('  ... found {:_} media'.format(len(newfiles)))
             files.extend(newfiles) # type: ignore
     files_str = [ str(f) for f in files if (f.suffix in MEDIA_EXTENSIONS) ]
-    files_str = [ f for f in files_str if os.path.getsize(f) >= 1024 ] # filter filesize
+    # files_str = [ f for f in files_str if os.path.getsize(f) >= 1024 ] # filter filesize
     return files_str
 
 
@@ -98,13 +106,12 @@ def make_posts_sfw(posts: dict[str, Any], sfw_media_dir: str):
 
 # 
 def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringParser):
-    Global_Source_ID = 0
+    global Global_Source_ID
     parents, stem, suffix = path_components(rel_path)
-    filename_post_data = parse_data_from_stem(stem, parser)
-    tags_from_file = te.read_tags_from_metadata_file(abs_path, filename_post_data.get('source_id'), filename_post_data.get('secondary_source_id'))
+    source = parents[0] if len(parents) > 0 else 'SOURCE_UNKNOWN'
+    creator = parents[1] if len(parents) > 1 else 'CREATOR_UNKNOWN'
     
     post: dict[str, Any] = {
-        # 'idx': idx,
         'post_id': None,
         'media_id': None,
         'source_id': None,
@@ -112,45 +119,45 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
         'item_num': 0,
         'src': rel_path,
         'url': None,
-        'source': 'SOURCE_UNKNOWN',
-        'creator': 'CREATOR_UNKNOWN',
+        'source': source,
+        'creator': creator,
         'author': None,
         'date_uploaded': None,
+        'date_downloaded': datetime.fromtimestamp(os.path.getmtime(abs_path)).strftime('%Y:%m:%d %H:%M:%S'),
+        
         'title': None,
         'filename': stem + suffix,
         'suffix': suffix,
         'media_type': get_media_type(suffix),
-        'likes': -1,
-        'date_downloaded': datetime.fromtimestamp(os.path.getmtime(abs_path)).strftime('%Y:%m:%d %H:%M:%S')
+        'upvotes': -1,
+        'downvotes': -1,
+        'views': -1,
     }
-    for data_dict in [ filename_post_data, tags_from_file ]:
+    
+    filename_data = parse_data_from_stem(stem, parser)
+    metadata = get_file_metadata(abs_path, filename_data.get('source_id'), filename_data.get('secondary_source_id'))
+    metadata = standardize_metadata(metadata, source)
+    
+    for data_dict in [ filename_data, metadata ]:
         if data_dict:
             for k, v in data_dict.items():
                 post[k] = v
-    if 'upvotes' in post:
-        post['likes'] = post['upvotes']
-    if post.get('source') == 'SOURCE_UNKNOWN' and len(parents) > 0:
-        post['source'] = parents[0]
-    if post.get('creator') == 'CREATOR_UNKNOWN' and len(parents) > 1:
-        post['creator'] = parents[1]
-        if 'reddit' in post['source'] and not post['creator'].startswith('u_'):
-            post['creator'] = 'r/' + post['creator']
-    if post['source'].lower() == 'reddit':
-        post['subreddit'] = post['creator']
+    
+    if 'reddit' in source and not creator.startswith('u_'):
+        post['creator'] = 'r/' + post['creator']
+    
     if post['source_id'] == None:
         post['source_id'] = Global_Source_ID
         Global_Source_ID += 1
+    
     post['post_id'] = get_post_id(post) # requires source_id
     post['media_id'] = get_media_id(post)
     post['url'] = get_post_url(post)
-    for key in ['likes', 'views']:
-        if key in post:
-            post[key] = int(post[key])
 
     # ORGANIZE TAGS
     meta_tags =     make_combined_list_from_params(post, ['source', 'creator', 'author', 'artist'])
     proper_tags =   make_combined_list_from_params(post, 
-                        ['suffix_tags', 'tags_artist', 'tags_character', 'tags_copyright', 'tags_general', 'custom_tags', 'categories', 'pornstars', 'characters', 'sources'])
+                        ['tags', 'suffix_tags', 'tags_artist', 'tags_character', 'tags_copyright', 'tags_general', 'custom_tags', 'categories', 'pornstars', 'characters', 'sources'])
     improper_tags = make_combined_list_from_params(post, ['tags_from_title', 'tags_from_content'])
     
     ignore_tags = ['[delete]']
@@ -159,6 +166,24 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
     post['improper_tags'] = [ t for t in set(improper_tags) if t not in ignore_tags ]
     
     return post
+
+
+# get metadata for media
+def get_file_metadata(abs_path: str, id_primary: str|None, id_secondary: str|None=None) -> dict[str, Any]:
+
+    if id_primary == None:
+        return {}
+    
+    metadata = metadata_load_with_id(abs_path, id_primary)
+    id_comments = f'{id_primary}-comments'
+    comments_dict = metadata_load_with_id(abs_path, id_comments, use_shared_metadata=False)
+    metadata = combine_metadata(metadata, comments_dict)
+    if id_secondary:
+        metadata_sec = metadata_load_with_id(abs_path, id_secondary)
+        metadata = combine_metadata(metadata, metadata_sec)
+    
+    return metadata
+
 
 
 # parses post data from stem
@@ -187,7 +212,7 @@ def get_tags_from_title(title: str, remove_stopwords: bool=True) -> list[str]:
     
     words = [ w for w in title.split() if (len(w) > 2 and len(w) < 20 and not w.isnumeric()) ]
     if remove_stopwords:
-        words = [ w for w in words if w not in STOPWORDS_ENG ]
+        words = [ w for w in words if w not in Global_Stopwords_End ]
     
     bigram_words = [ '-'.join(bg) for bg in nltk.bigrams(words) ] # type: ignore
     tags = words + bigram_words
