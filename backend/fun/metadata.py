@@ -38,24 +38,26 @@ def metadata_load_with_id(path: str, file_id: str, use_shared_metadata: bool=Tru
     for parent in dirs:
         fp = os.path.join(parent, metadata_fn)
         if os.path.exists(fp):
-            data = read_json_file(fp)
+            data = read_json_file_to_dict(fp)
             break
     if use_shared_metadata:
         for parent in dirs:
             fp = os.path.join(parent, '.metadata.json')
             if os.path.exists(fp):
-                data_shared = read_json_file(fp)
+                data_shared = read_json_file_to_dict(fp)
                 data = combine_metadata(data, data_shared)
     return data
 
 
-def read_json_file(path: str):
+def read_json_file_to_dict(path: str) -> dict[str, Any]:
     with open(path, 'r') as f:
         data = json.load(f)
-    return data
+    if not isinstance(data, dict):
+        data = {'data': data}
+    return data # type: ignore
 
 def combine_metadata(d1: dict[str, Any], d2: dict[str, Any], overwrite_nonlist: bool=False) -> dict[str, Any]:
-    d = { k: v for k, v in d1.items() }
+    d: dict[str, Any] = { k: v for k, v in d1.items() }
     for k, v in d2.items():
         ev = d.get(k)
         if ev == None:

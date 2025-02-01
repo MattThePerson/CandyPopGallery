@@ -11,13 +11,10 @@ metadata_unifying_options: dict[str, Any] = {
             'ups',
             'downs',
             'author',
-            'date',
             'score',
-            'id',
+            'link_flair_text',
         ],
         'keys_map': {
-            'id': 'source_id',
-            'date': 'date_uploaded',
             'ups': 'upvotes',
             'downs': 'downvotes',
             'subreddit_name_prefixed': 'subreddit',
@@ -28,18 +25,14 @@ metadata_unifying_options: dict[str, Any] = {
     'redgifs': {
         'keep_keys': [
             'description',
-            'id',
             'likes',
             'niches',
             'sexuality',
             'tags',
             'userName',
             'views',
-            'date'
         ],
         'keys_map': {
-            'id': 'source_id',
-            'date': 'date_uploaded',
             'likes': 'upvotes',
             'userName': 'username'
         }
@@ -48,26 +41,20 @@ metadata_unifying_options: dict[str, Any] = {
     # INSTAGRAM
     'instagram': {
         'keep_keys': [
-            'post_shortcode',
             'likes',
             'description',
             'tags',
             'username',
             'fullname',
-            'post_date',
             'coauthors',
         ],
         'keys_map': {
-            'post_shortcode', 'source_id',
-            'post_date', 'date_uploaded',
         }
     },
     
     # TWITTER
     'twitter': {
         'keep_keys': [
-            'tweet_id',
-            'date',
             'hashtags',
             'favorite_count',
             'view_count',
@@ -76,19 +63,69 @@ metadata_unifying_options: dict[str, Any] = {
             'author',
         ],
         'keys_map': {
-            'tweet_id': 'source_id',
-            'date': 'date_uploaded',
             'hashtags': 'tags',
             'favorite_count': 'upvotes',
             'view_count': 'views',
         }
     },
+    
+    # PATREON
+    'patreon': {
+        'keep_keys': [
+            'content',
+            'like_count',
+            'tags',
+            'title',
+            'teaser_text',
+            'comment_count',
+        ],
+        'keys_map': {
+            'like_count': 'upvotes',
+        }
+    },
+    
+    # RULE34
+    "rule34": {
+        'keep_keys': [
+            'score',
+            'source',
+            'uploader',
+            'tags',
+            'comments',
+            'tags_artist',
+            'tags_character',
+            'tags_copyright',
+            'tags_general',
+            'tags_metadata',
+        ],
+        'keys_map': {
+            'score': 'upvotes',
+            'source': 'original_source_url',
+        }
+    },
+    
+    # BLUESKY
+    "bluesky": {
+        'keep_keys': [
+            'likeCount',
+            'labels',
+            'text',
+            'repostCount',
+            'quoteCount',
+        ],
+        'keys_map': {
+            'likeCount': 'upvotes',
+        }
+    },
+    
+    
 }
 
 
 
 # 
 def standardize_metadata(metadata: dict[str, Any], source: str) -> dict[str, Any]:
+    """ For the metadata of a given post, keep desired keys, map to new keynames and add general processing """
     global metadata_unifying_options
     options = metadata_unifying_options.get(source.lower())
     if options == None:
@@ -105,11 +142,27 @@ def standardize_metadata(metadata: dict[str, Any], source: str) -> dict[str, Any
     
     if source.lower() == 'twitter':         metadata_unf = handle_twitter(metadata_unf)
     if source.lower() == 'instagram':       metadata_unf = handle_instagram(metadata_unf)
+    if source.lower() == 'rule34':          metadata_unf = handle_rule34(metadata_unf)
+    
+    metadata_unf = handle_general(metadata_unf)
     
     return metadata_unf
 
 
 # HANDLERS
+
+def handle_general(metadata: dict[str, Any]) -> dict[str, Any]:
+    # ints
+    for key in ['upvotes', 'downvotes', 'views']:
+        if metadata.get(key) != None:
+            metadata[key] = int(metadata[key])
+    
+    # floats
+    for key in ['upvote_ratio']:
+        if key in metadata:
+            metadata[key] = float(metadata[key])
+    
+    return metadata
 
 def handle_twitter(metadata: dict[str, Any]) -> dict[str, Any]:
     author_obj = metadata.get('author')
@@ -121,10 +174,15 @@ def handle_twitter(metadata: dict[str, Any]) -> dict[str, Any]:
     return metadata
 
 def handle_instagram(metadata: dict[str, Any]) -> dict[str, Any]:
-    
     coauthors = metadata.get('coauthors')
     if coauthors:
         usernames = [ co.get('username') for co in coauthors ]
         metadata['coauthors'] = usernames
-    
+    return metadata
+
+def handle_rule34(metadata: dict[str, Any]) -> dict[str, Any]:
+    for tag_type in ['tags_artist', 'tags_character', 'tags_copyright', 'tags_metadata']:
+        slug = tag_type.split('_')[-1]
+        if isinstance(metadata.get(tag_type), list):
+            metadata[tag_type] = [ f'{slug}: {tag}' for tag in metadata[tag_type] ]
     return metadata

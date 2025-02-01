@@ -10,13 +10,14 @@ interface SimpleStreamProps {
     streamLoadState: any;
     setStreamLoadState: Function;
     setSelectedTags: Function;
+    updateOverlayPost: Function;
 }
 
-function SimpleStream({ posts, streamLoadState, setStreamLoadState, setSelectedTags }: SimpleStreamProps) {
+function SimpleStream({ posts, streamLoadState, setStreamLoadState, setSelectedTags, updateOverlayPost }: SimpleStreamProps) {
 
     /* AUTOPLAY LOGIC */
 
-    const containerRef = useRef(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -39,10 +40,9 @@ function SimpleStream({ posts, streamLoadState, setStreamLoadState, setSelectedT
             { threshold: 0.5 } // Trigger when 50% of the post is visible
         );
 
-        let postEls = [];
-        if (containerRef.current) postEls = containerRef.current.querySelectorAll('.Post');
+        const postEls = containerRef.current?.querySelectorAll('.Post');
+        postEls?.forEach((post: any) => observer.observe(post));
         // console.log('In useEffect:', postEls.length);
-        postEls.forEach((post: any) => observer.observe(post));
 
         return () => {
             // posts.forEach((post) => {
@@ -78,7 +78,7 @@ function SimpleStream({ posts, streamLoadState, setStreamLoadState, setSelectedT
 
     /* HTML */
     const postElementsToDisplay = posts.slice(0, streamLoadState.postsLoaded).map((post: any) =>
-        <Post key={post.post_id} data={post} setSelectedTags={setSelectedTags} />
+        <Post key={post.post_id} data={post} setSelectedTags={setSelectedTags} updateOverlayPost={updateOverlayPost} />
     );
 
     return (

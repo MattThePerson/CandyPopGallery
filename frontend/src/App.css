@@ -12,6 +12,16 @@ body {
     display: flex;
 }
 
+.no-scroll {
+    overflow: hidden;
+    position: fixed;
+    top: var(--scroll-y);
+    left: 15rem;
+    /* top: 0; */
+    /* width: 100%; */
+    /* background: orange; */
+}
+
 /* SIDE BAR SECTION */
 
 #side-bar-section {

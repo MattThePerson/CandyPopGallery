@@ -100,24 +100,27 @@ def main(args: argparse.Namespace):
     gl.filename_parser = StringParser(gl.settings.getValue('filename_formats'))
 
     # scan dirs for posts
-    print('[MAIN:SCAN] Fetching media from media folders ...')
+    print('Fetching media from media folders ...')
     start = time.time()
     media_paths: list[str] = load.get_media_from_dirs(gl.media_dirs)
-    print('[MAIN:SCAN] Loaded {:_} media from {} base folders in {:.1f} sec'.format(len(media_paths), len(gl.media_dirs), time.time()-start))
+    print('Loaded {:_} media from {} base folders in {:.1f} sec'.format(len(media_paths), len(gl.media_dirs), time.time()-start))
     
     # filter media
     if args.filters:
         media_paths = ff.filter_strings(media_paths, args.filters, args.union_mode)
     
     # generate media objects from media paths
-    print('[MAIN:LOAD] Generating post objects for {:_} media ...'.format(len(media_paths)))
+    print('Generating post objects for {:_} media ...'.format(len(media_paths)))
     start = time.time()
     gl.media_objects = load.load_media_objects(media_paths, gl.media_dirs, gl.saved_media_objects.jsonObject, gl.filename_parser, redo=args.redo_media_extract)
-    print('saving posts ...')
-    for src, post in gl.media_objects.items():
-        gl.saved_media_objects.setValue(src, post, nosave=True)
-    gl.saved_media_objects.save()
-    print('[MAIN:LOAD] Done. Took {:.1f} sec'.format(time.time()-start))
+    print('saving media objects ...')
+    ff.save_media_objects(gl.media_objects, gl.saved_media_objects)
+    print('Done. Took {:.1f} sec'.format(time.time()-start))
+    
+    # filter small media objects (eg. 'image does not exist' images)
+    before_size = len(gl.media_objects)
+    gl.media_objects = { rel_path: obj for rel_path, obj in gl.media_objects.items() if obj.get('filesize_bytes', 0) > 1024 }
+    print('Removed {:_}/{:_} ({:.1f}%) media objects that were too small'.format( before_size-len(gl.media_objects), before_size, (before_size-len(gl.media_objects))/before_size*100 ))
     
     # PRINT OUT POST OBJECTS (AND PAUSE) ##
     if args.print_posts:
@@ -166,7 +169,6 @@ if __name__ == '__main__':
     parser.add_argument('-union_mode', action='store_true', help='Union mode for filters (default: intercect mode)')
     
     args = parser.parse_args()
-    print(args)
     print()
     try:
         main(args)

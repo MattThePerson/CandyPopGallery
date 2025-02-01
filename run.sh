@@ -38,10 +38,10 @@ start_servers() {
     # UNUSED! echo "[HTTP Server] Starting HTTP server for frontend on port $HTTP_SERVER_PORT ..."
     # UNUSED! python3 -m http.server $HTTP_SERVER_PORT &
     
-    # echo "[NODE] Building frontend ..."
-    # npm run build
-    # echo "[NODE] Starting frontend server ..."
-    # npm run preview &
+    #echo "[NODE] Building frontend ..."
+    #npm run build
+    #echo "[NODE] Starting frontend server ..."
+    #npm run preview &
     
     echo "[NODE] Starting frontend dev server ..."
     npm run dev &

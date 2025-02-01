@@ -41,16 +41,18 @@ def get_media_from_dirs(dirs: list[str]) -> list[str]:
 # 
 def load_media_objects(abs_paths: list[str], media_dirs: list[str], saved_posts: dict[str, Any], parser: StringParser, redo: bool=False) -> dict[str, Any]:
     posts_dict: dict[str, Any] = {}
+    extractions_count = 0
     for idx, abs_path in enumerate(abs_paths):
         media_dir = next((f for f in media_dirs if abs_path.startswith(f)), '')
         rel_path = abs_path.replace(media_dir, '')
-        print('\rLoading posts ({:_}/{:_}) ({:.1f}%)'.format( idx+1, len(abs_paths), ((idx+1)/len(abs_paths)*100) ), end='')
-        if not redo and rel_path in saved_posts:
-            post = saved_posts.get(rel_path)
-        else:
+        if idx%1 == 0:
+            print('\rLoading posts ({:_}/{:_}) ({:.1f}%) |{:<75}|     '.format( idx+1, len(abs_paths), ((idx+1)/len(abs_paths)*100), rel_path[:73] ), end='')
+        post = saved_posts.get(rel_path) # get post from pre-existing posts
+        if post == None or redo:
             post = extract_media_data(idx, rel_path, abs_path, parser)
+            extractions_count += 1
         posts_dict[rel_path] = post
-    print()
+    print('\nDone. Extracted media for {:_}/{:_} media_objects'.format(extractions_count, len(abs_paths)))
     return posts_dict
 
 
@@ -124,7 +126,7 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
         'author': None,
         'date_uploaded': None,
         'date_downloaded': datetime.fromtimestamp(os.path.getmtime(abs_path)).strftime('%Y:%m:%d %H:%M:%S'),
-        
+        'filesize_bytes': os.path.getsize(abs_path),
         'title': None,
         'filename': stem + suffix,
         'suffix': suffix,
@@ -156,8 +158,11 @@ def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringPar
 
     # ORGANIZE TAGS
     meta_tags =     make_combined_list_from_params(post, ['source', 'creator', 'author', 'artist'])
-    proper_tags =   make_combined_list_from_params(post, 
-                        ['tags', 'suffix_tags', 'tags_artist', 'tags_character', 'tags_copyright', 'tags_general', 'custom_tags', 'categories', 'pornstars', 'characters', 'sources'])
+    proper_tags =   make_combined_list_from_params(post, [
+                        'tags', 'suffix_tags', 'custom_tags',
+                        'tags_artist', 'tags_character', 'tags_copyright', 'tags_general', 'tags_metadata', # rule34
+                        'categories', 'pornstars', 'characters', 'sources'
+    ])
     improper_tags = make_combined_list_from_params(post, ['tags_from_title', 'tags_from_content'])
     
     ignore_tags = ['[delete]']
@@ -253,7 +258,7 @@ def get_post_url(post_data: dict[str, Any]):
         'instagram': 'https://www.instagram.com/_/p/{}',
         '3dhentai': '',
         'danbooru': '',
-        'rule34': ''
+        'rule34': 'https://rule34.xxx/index.php?page=post&s=view&id={}'
     }
     source, source_id = post_data.get('source'), post_data.get('source_id')
     url_format = site_format.get(source)

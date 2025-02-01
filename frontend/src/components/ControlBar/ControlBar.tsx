@@ -36,7 +36,7 @@ function ControlBar({sortby, handleSortChange, viewMode, updateViewMode}: Contro
     /* ELEMENTS */
 
     // sortBy buttons
-    const sortbyButtons = ["date-downloaded", "date-uploaded", "likes", "random"].map((type, idx) => {
+    const sortbyButtons = ["date-downloaded", "date-uploaded", "upvotes", "random"].map((type, idx) => {
 
         function getClasses() {
             const classes = ["button"]

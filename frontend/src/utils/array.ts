@@ -57,8 +57,8 @@ export function shuffleListWithSeed(list: any[], seed: string): any {
 
 /* Array Analysis functions */
 
-// get date distribution
-export function computeDateDist(posts: any[], param: string, descending: boolean): any[] {
+// get date distribution. Assumes posts already sorted!
+export function computeDateDist(posts: any[], param: string): any[] {
     
     const counter: {[key: string]: any} = {};
     const keys: string[] = [];
@@ -80,114 +80,30 @@ export function computeDateDist(posts: any[], param: string, descending: boolean
         return { date: dateStr, count: counter[dateStr] }
     });
 
-    console.log("in datedist, dist by:", param);
-    console.log(posts.length);
-    console.log(counter);
-    // console.log(counterMonth);
-    console.log(dist);
-    
     return dist;
-
-    return [
-        { date: "2024", count: 1298 },
-        { date: "2024-01", count: 24 },
-        { date: "2024-02", count: 29 },
-        { date: "2024-03", count: 20 },
-        { date: "2024-04", count: 33 },
-        { date: "2024-05", count: 12 },
-        { date: "2024-06", count: 10 },
-        { date: "2024-07", count: 5 },
-        { date: "2024-08", count: 37 },
-        { date: "2024-09", count: 21 },
-        { date: "2024-10", count: 39 },
-        { date: "2024-11", count: 35 },
-        { date: "2024-12", count: 41 },
-        { date: "2023", count: 198 },
-        { date: "2023-01", count: 29 },
-        { date: "2023-02", count: 21 },
-        { date: "2023-03", count: 3 },
-        { date: "2023-04", count: 2 },
-        { date: "2023-05", count: 39 },
-        { date: "2023-06", count: 1 },
-        { date: "2023-07", count: 24 },
-        { date: "2023-08", count: 12 },
-        { date: "2023-09", count: 2 },
-        { date: "2023-10", count: 7 },
-        { date: "2023-11", count: 11 },
-        { date: "2023-12", count: 1 },
-        { date: "2022", count: 198 },
-        { date: "2022-01", count: 24 },
-        { date: "2022-02", count: 41 },
-        { date: "2022-03", count: 33 },
-        { date: "2022-04", count: 34 },
-        { date: "2022-05", count: 10 },
-        { date: "2022-06", count: 5 },
-        { date: "2022-07", count: 24 },
-        { date: "2022-08", count: 10 },
-        { date: "2022-09", count: 39 },
-        { date: "2022-10", count: 12 },
-        { date: "2022-11", count: 29 },
-        { date: "2022-12", count: 38 },
-        { date: "2021", count: 198 },
-        { date: "2021-01", count: 9 },
-        { date: "2021-02", count: 10 },
-        { date: "2021-03", count: 12 },
-        { date: "2021-04", count: 35 },
-        { date: "2021-05", count: 16 },
-        { date: "2021-06", count: 36 },
-        { date: "2021-07", count: 43 },
-        { date: "2021-08", count: 18 },
-        { date: "2021-09", count: 26 },
-        { date: "2021-10", count: 45 },
-        { date: "2021-11", count: 1 },
-        { date: "2021-12", count: 36 },
-        { date: "2020", count: 198 },
-        { date: "2020-01", count: 5 },
-        { date: "2020-02", count: 5 },
-        { date: "2020-03", count: 0 },
-        { date: "2020-04", count: 2 },
-        { date: "2020-05", count: 28 },
-        { date: "2020-06", count: 45 },
-        { date: "2020-07", count: 45 },
-        { date: "2020-08", count: 12 },
-        { date: "2020-09", count: 35 },
-        { date: "2020-10", count: 40 },
-        { date: "2020-11", count: 3 },
-        { date: "2020-12", count: 40 },
-        { date: "2019", count: 198 },
-        { date: "2019-01", count: 34 },
-        { date: "2019-02", count: 10 },
-        { date: "2019-03", count: 44 },
-        { date: "2019-04", count: 11 },
-        { date: "2019-05", count: 23 },
-        { date: "2019-06", count: 40 },
-        { date: "2019-07", count: 8 },
-        { date: "2019-08", count: 6 },
-        { date: "2019-09", count: 28 },
-        { date: "2019-10", count: 15 },
-        { date: "2019-11", count: 3 },
-        { date: "2019-12", count: 20 }
-    ];
 }
 
 // assumes posts are already sorted by param!
 export function filterPostsByParam(posts: any[], param: string, descending: boolean, thresh: string): any[] {
 
-    const normalizedThresh = normalizeDate(thresh);
+    console.log(descending);
+    const threshNorm = normalizeDate(thresh);
     const filtered = [];
 
-    console.log('filtering by date:', normalizedThresh);
+    console.log('filtering by date:', threshNorm);
 
     for (let post of posts) {
         const value = post[param];
         if (value) {
-            const normalizedValue = normalizeDate(value);
+            const valueNorm = normalizeDate(value);
 
-            // Compare based on descending or ascending
-            if (descending && normalizedValue <= normalizedThresh || 
-                !descending && normalizedValue >= normalizedThresh) {
+            if (valueNorm < threshNorm) {
                 filtered.push(post);
             }
+            // if (descending && normalizedValue <= normalizedThresh || 
+            //     !descending && normalizedValue >= normalizedThresh) {
+            //     filtered.push(post);
+            // }
         }
     }
 
