@@ -1,3 +1,4 @@
+""" Functions for processing posts, called by server script """
 from typing import Any
 
 

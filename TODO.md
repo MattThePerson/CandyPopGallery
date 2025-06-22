@@ -23,3 +23,41 @@
 - reddit-1i020vu
 - reddit-19awi30
 
+
+
+
+
+## BACKEND FILE STRUCTURE:
+
+|- fontend/
+|  |- src/
+|  |- index.html
+|  |- package.json
+|- data/
+|  |- settings_template.json
+|- app/
+|  |- app_state.py
+|  |- flask_server.py
+|- fun/
+|  |- fun.py  // generic functions
+|  |- load.py
+|  |- processing.py
+|- main.py
+
+
+## IMPORT NETWORK
+
+main
+- fun.fun
+- fun.load
+
+flask_server
+- fun.processing
+
+fun.fun
+...
+
+fun.load
+- fun.metadata
+- fun.metadata_standardize
+

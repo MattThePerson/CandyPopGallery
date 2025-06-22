@@ -1,13 +1,15 @@
+""" Generic functions """
 from typing import Any
 from util.json_handler import JsonHandler
 
 
-
 def save_media_objects(media_objects: dict[str, Any], saved_media_objects: JsonHandler):
+    """ saves media objects into JsonHandler """
     for src, post in media_objects.items():
         saved_media_objects.setValue(src, post, nosave=True)
     saved_media_objects.save()
 
+# save_media_objects()
 
 def initialize_settings(settingsHandler: JsonHandler):
     settingsHandler.setValue('media_folders', [])

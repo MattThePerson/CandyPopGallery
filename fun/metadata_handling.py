@@ -1,3 +1,4 @@
+""" Functions for reading metadata from metadata.json files in the directories of media """
 from typing import Any
 import os
 from pathlib import Path

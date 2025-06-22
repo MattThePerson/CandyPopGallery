@@ -1,10 +1,11 @@
+""" Functions for loading and pre-processing media """
 import os
 from pathlib import Path
 from typing import Any
 from util.string_parser import StringParser
 from datetime import datetime
-from fun.metadata import metadata_load_with_id, combine_metadata
-from fun.metadata_standardize import standardize_metadata
+from fun.metadata_handling import metadata_load_with_id, combine_metadata
+from fun.metadata_standarding import standardize_metadata
 
 import nltk # type: ignore
 

@@ -2,3 +2,9 @@
 __pycache__/
 .vscode/
 **/public/static_pages/
+_discard/
+
+# python
+data/*
+!data/settings-template.json
+**tests/
