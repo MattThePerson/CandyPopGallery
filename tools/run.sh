@@ -65,11 +65,11 @@ restart_servers() {
 
 # Function to handle cleanup on exit (e.g., Ctrl+C)
 cleanup() {
-  echo "[CLEANUP] Shutting down servers (HTTP_SERVER=$HTTP_SERVER_PID FLASK_API=$FLASK_API_PID) ..."
-  kill $HTTP_SERVER_PID $FLASK_API_PID
-  echo "Exiting..."
-  echo
-  exit 0
+    echo "[CLEANUP] Shutting down servers (HTTP_SERVER=$HTTP_SERVER_PID FLASK_API=$FLASK_API_PID) ..."
+    kill $HTTP_SERVER_PID $FLASK_API_PID
+    echo "Exiting..."
+    echo
+    exit 0
 }
 
 
