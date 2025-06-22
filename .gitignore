@@ -1,9 +1,9 @@
 .venv/
 __pycache__/
 .vscode/
-**/public/static_pages/
-_discard/
 
-# python
+# custom
+**/public/static_pages/
+.trash/
 data/*
 **tests/

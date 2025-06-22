@@ -2,20 +2,82 @@
 import os
 from pathlib import Path
 from typing import Any
-from util.string_parser import StringParser
 from datetime import datetime
-from fun.metadata_handling import metadata_load_with_id, combine_metadata
-from fun.metadata_standarding import standardize_metadata
-
 import nltk # type: ignore
+import time
+
+from handymatt import StringParser
+
+from .metadata_handling import metadata_load_with_id, combine_metadata
+from .metadata_standarding import standardize_metadata
+from .fun import filter_strings
+from config import FILENAME_PARSER
+import backend.db as db
+
 
 Global_Stopwords_End = []
 Global_Source_ID = 0
 
-#### EXPORT ####
+
+def scan_media_libraries(media_dirs: list[str]) -> None:
+    """ Scans media from media dirs, loads post objects, and saves to db """
+    
+    print_posts: int|bool = False
+    redo_media_extract = False
+    filters = []
+    union_mode = False # for filters
+    
+    load_nltk_stopwords()
+    
+    # scan dirs for posts
+    print('Fetching media from media folders ...')
+    start = time.time()
+    media_paths: list[str] = get_media_from_dirs(media_dirs)
+    print('Loaded {:_} media from {} base folders in {:.1f} sec'.format(len(media_paths), len(media_dirs), time.time()-start))
+    
+    # filter media
+    if filters:
+        media_paths = filter_strings(media_paths, filters, union_mode)
+    
+    # generate media objects from media paths
+    print('Generating post objects for {:_} media ...'.format(len(media_paths)))
+    start = time.time()
+    saved_post_objects = db.read_table_as_dict('posts')
+    media_objects = load_media_objects(media_paths, media_dirs, saved_post_objects, FILENAME_PARSER, redo=redo_media_extract)
+
+    # filter small media objects (eg. 'image does not exist' images)
+    before_size = len(media_objects)
+    media_objects = { rel_path: obj for rel_path, obj in media_objects.items() if obj.get('filesize_bytes', 0) > 1024 }
+    if len(media_objects) < before_size:
+        print('Removed {:_}/{:_} ({:.1f}%) media objects that were too small'.format( before_size-len(media_objects), before_size, (before_size-len(media_objects))/before_size*100 ))
+    
+    # generate posts from media objects (basically combine media from same post)
+    post_objects = generate_post_objects(list(media_objects.values()))
+    
+    # save to db
+    db.write_objects_to_db(post_objects, 'posts')
+    
+
+    # DEBUGGING
+    if print_posts:
+        import random
+        random.seed(0)
+        POSTS = [ v for v in media_objects.values() ]
+        random.shuffle(POSTS)
+        print()
+        for i, post in enumerate(POSTS[:print_posts]):
+            print('  ({}) "{}"'.format(i+1, post['src']))
+            if args.print_verbose:
+                for k, v in post.items():
+                    print('{:<20}:  {}'.format(k, v))
+                print()
+        print()
+        input('...')
+
 
 # 
-def load_nltk():
+def load_nltk_stopwords():
+    """  """
     global Global_Stopwords_End
     nltk.download('stopwords') # type: ignore
     Global_Stopwords_End = nltk.corpus.stopwords.words('english')
@@ -23,6 +85,7 @@ def load_nltk():
 
 # 
 def get_media_from_dirs(dirs: list[str]) -> list[str]:
+    """ Get media files from a list of directories """
     MEDIA_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm']
     files: list[Path] = []
     for i, base_dir in enumerate(dirs):
@@ -40,20 +103,21 @@ def get_media_from_dirs(dirs: list[str]) -> list[str]:
 
 
 # 
-def load_media_objects(abs_paths: list[str], media_dirs: list[str], saved_posts: dict[str, Any], parser: StringParser, redo: bool=False) -> dict[str, Any]:
+def load_media_objects(media_paths: list[str], media_dirs: list[str], saved_post_objects: dict[str, Any], parser: StringParser, redo: bool=False) -> dict[str, Any]:
+    """ Given a list of media paths and saved posts,  """
     posts_dict: dict[str, Any] = {}
     extractions_count = 0
-    for idx, abs_path in enumerate(abs_paths):
+    for idx, abs_path in enumerate(media_paths):
         media_dir = next((f for f in media_dirs if abs_path.startswith(f)), '')
         rel_path = abs_path.replace(media_dir, '')
         if idx%1 == 0:
-            print('\rLoading posts ({:_}/{:_}) ({:.1f}%) |{:<75}|     '.format( idx+1, len(abs_paths), ((idx+1)/len(abs_paths)*100), rel_path[:73] ), end='')
-        post = saved_posts.get(rel_path) # get post from pre-existing posts
+            print('\rLoading posts ({:_}/{:_}) ({:.1f}%) |{:<75}|     '.format( idx+1, len(media_paths), ((idx+1)/len(media_paths)*100), rel_path[:73] ), end='')
+        post = saved_post_objects.get(rel_path) # get post from pre-existing posts
         if post == None or redo:
-            post = extract_media_data(idx, rel_path, abs_path, parser)
+            post = _extract_media_data(idx, rel_path, abs_path, parser)
             extractions_count += 1
         posts_dict[rel_path] = post
-    print('\nDone. Extracted media for {:_}/{:_} media_objects'.format(extractions_count, len(abs_paths)))
+    print('\nDone. Extracted media for {:_}/{:_} media_objects'.format(extractions_count, len(media_paths)))
     return posts_dict
 
 
@@ -105,10 +169,12 @@ def make_posts_sfw(posts: dict[str, Any], sfw_media_dir: str):
     return posts
 
 
-#### INTERNAL ####
+#endregion
+
+#region - PRIVATE FUNCS ------------------------------------------------------------------------------------------------
 
 # 
-def extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringParser):
+def _extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringParser):
     global Global_Source_ID
     parents, stem, suffix = path_components(rel_path)
     source = parents[0] if len(parents) > 0 else 'SOURCE_UNKNOWN'

@@ -1,2 +1,0 @@
-# CandyPop Gallery Frontend
-

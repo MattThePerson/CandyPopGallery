@@ -1,5 +1,20 @@
 
 
+### Frontend/Backend Interface
+
+- /search-posts/<params>
+- /get-post-info/<post_id>
+- /media/<relative_path>
+
+
+
+### TODO List
+
+- [BACK] Get basic backend up and running for frontend dev
+- [FRONT] Get basic template for responsive and collapsible sidebar (collapse on phones)
+- [FRONT] Figure out infinite scroll
+
+
 ### Collection Management ToDo
 
 - Download Stoyadinovich/top/?t=all
@@ -22,7 +37,6 @@
 - reddit-1c4wpan
 - reddit-1i020vu
 - reddit-19awi30
-
 
 
 

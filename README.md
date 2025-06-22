@@ -4,14 +4,13 @@
 
 An app for exploring a local collection of well-tagged media. Made with ReactJS and Python Flask!
 
-## Install
+## Installation
 
 1. Clone repo
-2. With tools/setup.sh, make executable (`chmod +x setup.sh`) and run (`./setup.sh`) to install python and npm dependencies
-3. (Optional) Add symbolic link to tools/run.sh \
-`sudo ln -fs INSTALL_DIR/tools/run.sh /usr/local/bin/cpop-gall`
+2. In `tools/install.sh` edit `UTILITY_BIN_DIR` to point to folder on your path
+3. Give `tools/install.sh` exec perms and run it. This will install npm and python dependencies and create a symlink called `cpop-gall`
 
-Now, you'll have a CL utility called `cpop-gall` which will start the http server and flask api. 
+Now, you'll have a CL utility called `cpop-gall` which will start the backend. 
 
 ## Dependencies
 
