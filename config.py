@@ -8,3 +8,5 @@ with open('config.yaml', 'r') as f:
 MEDIA_FOLDERS = [ convert_to_wsl_path(pth) for pth in CONFIG.get('media_folders', []) if not pth.startswith('!') ]
 
 FILENAME_PARSER = StringParser(CONFIG.get('filename_formats'))
+
+MEDIA_EXTENSIONS = CONFIG.get('media_extensions_to_include')

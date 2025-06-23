@@ -2,14 +2,16 @@
 
 ### Frontend/Backend Interface
 
-- /search-posts/<params>
-- /get-post-info/<post_id>
-- /media/<relative_path>
-
+- /search-posts/QUERY
+- /get-post-info/{post_id}
+- /media/{relative_path}
+- /control/rescan-libraries
 
 
 ### TODO List
 
+
+- [BACK] 
 - [BACK] Get basic backend up and running for frontend dev
 - [FRONT] Get basic template for responsive and collapsible sidebar (collapse on phones)
 - [FRONT] Figure out infinite scroll

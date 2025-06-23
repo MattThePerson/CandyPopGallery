@@ -1,113 +1,88 @@
 """ Functions for loading and pre-processing media """
 import os
 from pathlib import Path
-from typing import Any
-from datetime import datetime
-import nltk # type: ignore
-import time
 
 from handymatt import StringParser
 
-from .metadata_handling import metadata_load_with_id, combine_metadata
-from .metadata_standarding import standardize_metadata
-from .fun import filter_strings
-from config import FILENAME_PARSER
-import backend.db as db
+from .post_data import extract_post_data
 
-
-Global_Stopwords_End = []
-Global_Source_ID = 0
-
-
-def scan_media_libraries(media_dirs: list[str]) -> None:
-    """ Scans media from media dirs, loads post objects, and saves to db """
-    
-    print_posts: int|bool = False
-    redo_media_extract = False
-    filters = []
-    union_mode = False # for filters
-    
-    load_nltk_stopwords()
-    
-    # scan dirs for posts
-    print('Fetching media from media folders ...')
-    start = time.time()
-    media_paths: list[str] = get_media_from_dirs(media_dirs)
-    print('Loaded {:_} media from {} base folders in {:.1f} sec'.format(len(media_paths), len(media_dirs), time.time()-start))
-    
-    # filter media
-    if filters:
-        media_paths = filter_strings(media_paths, filters, union_mode)
-    
-    # generate media objects from media paths
-    print('Generating post objects for {:_} media ...'.format(len(media_paths)))
-    start = time.time()
-    saved_posts = db.read_table_as_dict('posts')
-    saved_posts_by_rel_path = {} # { obj['rel_path']: obj for obj in saved_posts.values() }
-    media_objects = load_media_objects(media_paths, media_dirs, saved_posts_by_rel_path, FILENAME_PARSER, redo=redo_media_extract)
-
-    # filter small media objects (eg. 'image does not exist' images)
-    before_size = len(media_objects)
-    media_objects = { rel_path: obj for rel_path, obj in media_objects.items() if obj.get('filesize_bytes', 0) > 1024 }
-    if len(media_objects) < before_size:
-        print('Removed {:_}/{:_} ({:.1f}%) media objects that were too small'.format( before_size-len(media_objects), before_size, (before_size-len(media_objects))/before_size*100 ))
-    
-    # generate posts from media objects (basically combine media from same post)
-    post_objects = generate_post_objects(list(media_objects.values()))
-    print('Generated {:_} post objects'.format(len(post_objects)))
-    
-    # save to db
-    db.write_objects_to_db(post_objects, 'posts')
-    
-
-    # DEBUGGING
-    if print_posts:
-        import random
-        random.seed(0)
-        POSTS = [ v for v in media_objects.values() ]
-        random.shuffle(POSTS)
-        print()
-        for i, post in enumerate(POSTS[:print_posts]):
-            print('  ({}) "{}"'.format(i+1, post['src']))
-            if args.print_verbose:
-                for k, v in post.items():
-                    print('{:<20}:  {}'.format(k, v))
-                print()
-        print()
-        input('...')
 
 
 # 
-def load_nltk_stopwords():
-    """  """
-    global Global_Stopwords_End
-    nltk.download('stopwords') # type: ignore
-    Global_Stopwords_End = nltk.corpus.stopwords.words('english')
-
-
-# 
-def get_media_from_dirs(dirs: list[str]) -> list[str]:
+def get_media_path_tuples_from_dirs(dirs: list[str], media_extensions: list[str]) -> list[tuple[str, str]]:
     """ Get media files from a list of directories """
-    MEDIA_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm']
-    files: list[Path] = []
+    files: list[tuple[Path, str]] = []
     for i, base_dir in enumerate(dirs):
         print('Scanning media dirs ({}/{}) "{}"'.format(i+1, len(dirs), base_dir), end='')
         if not os.path.exists(base_dir):
             print('  ... WRONG PATH')
         else:
-            newfiles = [ f for f in Path(base_dir).rglob('*') ]
+            newfiles = [ (f, base_dir) for f in Path(base_dir).rglob('*') ]
             print('  ... found {:_} media'.format(len(newfiles)))
             files.extend(newfiles) # type: ignore
-    files_str = [ str(f) for f in files if (f.suffix in MEDIA_EXTENSIONS) ]
+    files_str = [ (str(f), parent_dir) for (f, parent_dir) in files if (f.suffix in media_extensions) ]
     # files_str = [ f for f in files_str if os.path.getsize(f) >= 1024 ] # filter filesize
     return files_str
 
 
+def _get_post_id_from_filename(fn):
+    """ Assumes id can be like this `filename [id].ext` or this `filename [id] #Tag1.ext` """
+    parts = fn.split('].')
+    if '] #' in fn:
+        parts = fn.split('] #') # 
+    if len(parts) == 1:
+        return fn
+    partial_str = parts[-2]
+    if '[' not in partial_str:
+        return fn
+    return partial_str.split('[')[-1]
 
 # 
-def load_media_objects(media_paths: list[str], media_dirs: list[str], saved_posts_by_rel_path: dict[str, dict], parser: StringParser, redo: bool=False) -> dict[str, Any]:
+def group_media_paths_into_posts(media_path_tuples: list[tuple[str, str]]) -> dict[str, list[tuple[str, str]]]:
+    post_media: dict[str, list] = {}
+    for idx, (path, parent_dir) in enumerate(media_path_tuples):
+        post_id = _get_post_id_from_filename(path)
+        paths_arr = post_media.get(post_id, [])
+        paths_arr.append((path, parent_dir))
+        post_media[post_id] = paths_arr
+    return post_media
+
+
+#
+def generate_or_load_post_objects(post_media_paths: dict[str, list[tuple[str, str]]], existing_post_objects: dict[str, dict], parser: StringParser, redo: bool=False) -> dict[str, dict]:
+    """ For 'unloaded' posts (just a list of filepaths), finds post from existing posts or generates post objects """
+    posts: dict[str, dict] = {}
+    extractions_count = 0
+    for idx, (post_id, media_path_tuples) in enumerate(post_media_paths.items()):
+        print('\rLoading/Generating posts ({:_}/{:_}) ({:.1f}%) |[{:<75}]|     '.format( idx+1, len(post_media_paths), ((idx+1)/len(post_media_paths)*100), post_id ), end='')
+        obj = existing_post_objects.get(post_id)
+        if obj is None or redo:
+            obj = extract_post_data(post_id, media_path_tuples, parser)
+            extractions_count += 1
+        posts[post_id] = obj
+    print('\nDone. Extracted data for {:_}/{:_} post objects'.format(extractions_count, len(post_media_paths)))
+    return posts
+
+
+# 
+def combine_loaded_and_existing_posts(loaded: dict[str, dict], existing: dict[str, dict]) -> dict[str, dict]:
+    """ Combined existing and loaded posts ensuring that posts that we're not loaded get flagged as not having linked media. """
+    combined = {}
+    for pid, obj in existing.items():
+        obj['HAS_LINKED_MEDIA'] = False
+        combined[pid] = obj
+    for pid, obj in loaded.items():
+        obj['HAS_LINKED_MEDIA'] = True
+        combined[pid] = obj
+    return combined
+
+
+
+
+# TODO: Asses need to remove
+def load_media_objects(media_paths: list[str], media_dirs: list[str], saved_posts_by_rel_path: dict[str, dict], parser: StringParser, redo: bool=False) -> dict:
     """ Given a list of media paths and saved posts,  """
-    posts_dict: dict[str, Any] = {}
+    posts_dict = {}
     extractions_count = 0
     for idx, abs_path in enumerate(media_paths):
         media_dir = next((f for f in media_dirs if abs_path.startswith(f)), '')
@@ -117,244 +92,43 @@ def load_media_objects(media_paths: list[str], media_dirs: list[str], saved_post
         post = saved_posts_by_rel_path.get(rel_path) # get post from pre-existing posts
         # print(post is None)
         if post is None or redo:
-            post = _extract_media_data(idx, rel_path, abs_path, parser)
+            post = {} #extract_media_data(idx, rel_path, abs_path, parser)
             extractions_count += 1
         posts_dict[rel_path] = post
-    print('\nDone. Extracted media for {:_}/{:_} media_objects'.format(extractions_count, len(media_paths)))
+    print('\nDone. Extracted data for {:_}/{:_} media_objects'.format(extractions_count, len(media_paths)))
     return posts_dict
 
 
-# 
-def generate_post_objects(media_objects: list[dict[str, Any]]) -> dict[str, Any]:
+# TODO: Assess need to remove
+def combine_media_objects_into_post_objects(media_objects: list[dict]) -> dict[str, dict]:
     """ Combine media objects into post objects. """
-    posts: dict[str, Any] = {}
+
+    posts: dict[str, dict] = {}
     
-    for obj in media_objects:
-        post_id = obj.get('post_id', 'None') # 'None' to ignore the fucking strict type checking
-        post: dict[str, Any] | None = posts.get(post_id)
-        if post == None:
+    media_object_keys = ['media_id', 'src', 'filename', 'media_type', 'filesize_bytes', 'suffix']
+    
+    for media_obj in media_objects:
+        post_id = media_obj.get('post_id', 'None') # 'None' to ignore the fucking strict type checking
+        post: dict | None = posts.get(post_id)
+        if post is None:
             post = {}
-            for key, value in obj.items():
-                if key not in ['media_id', 'src', 'filename']:
+            for key, value in media_obj.items():
+                if key not in media_object_keys:
                     post[key] = value
             post['media_count'] = 0
             post['media_objects'] = []
         
-        new_obj = {
-            'media_id': obj.get('media_id'),
-            'src': obj.get('src'),
-            'filename': obj.get('filename'),
-        }
+        pruned_media_object = { k: media_obj[k] for k in media_object_keys }
         post_media_objects = post.get('media_objects', [])
-        post_media_objects.append(new_obj)
+        post_media_objects.append(pruned_media_object)
         post_media_objects.sort(key=lambda obj: obj['media_id']) # type: ignore
         post['media_objects'] = post_media_objects
         post['media_count'] += 1
+        
         posts[post_id] = post
         
     return posts
 
 
 
-# 
-def make_posts_sfw(posts: dict[str, Any], sfw_media_dir: str):
-    import random
-    sfw_media = get_media_from_dirs([sfw_media_dir])
-    sfw_media = [ f.replace(sfw_media_dir, '') for f in sfw_media ]
-    random.shuffle(sfw_media)
-    i = 0
-    for post in posts.values():
-        post['src'] = sfw_media[i]
-        i += 1
-        if i >= len(sfw_media):
-            i = 0
-            random.shuffle(sfw_media)
-    return posts
 
-
-#endregion
-
-#region - PRIVATE FUNCS ------------------------------------------------------------------------------------------------
-
-# 
-def _extract_media_data(idx: int, rel_path: str, abs_path: str, parser: StringParser):
-    global Global_Source_ID
-    parents, stem, suffix = path_components(rel_path)
-    source = parents[0] if len(parents) > 0 else 'SOURCE_UNKNOWN'
-    creator = parents[1] if len(parents) > 1 else 'CREATOR_UNKNOWN'
-    
-    post: dict[str, Any] = {
-        'post_id': None,
-        'media_id': None,
-        'source_id': None,
-        'secondary_source_id': None,
-        'item_num': 0,
-        'src': rel_path,
-        'url': None,
-        'source': source,
-        'creator': creator,
-        'author': None,
-        'date_uploaded': None,
-        'date_downloaded': datetime.fromtimestamp(os.path.getmtime(abs_path)).strftime('%Y:%m:%d %H:%M:%S'),
-        'filesize_bytes': os.path.getsize(abs_path),
-        'title': None,
-        'filename': stem + suffix,
-        'suffix': suffix,
-        'media_type': get_media_type(suffix),
-        'upvotes': -1,
-        'downvotes': -1,
-        'views': -1,
-    }
-    
-    filename_data = parse_data_from_stem(stem, parser)
-    metadata = get_file_metadata(abs_path, filename_data.get('source_id'), filename_data.get('secondary_source_id'))
-    metadata = standardize_metadata(metadata, source)
-    
-    for data_dict in [ filename_data, metadata ]:
-        if data_dict:
-            for k, v in data_dict.items():
-                post[k] = v
-    
-    if 'reddit' in source and not creator.startswith('u_'):
-        post['creator'] = 'r/' + post['creator']
-    
-    if post['source_id'] == None:
-        post['source_id'] = Global_Source_ID
-        Global_Source_ID += 1
-    
-    post['post_id'] = get_post_id(post) # requires source_id
-    post['media_id'] = get_media_id(post)
-    post['url'] = get_post_url(post)
-
-    # ORGANIZE TAGS
-    meta_tags =     make_combined_list_from_params(post, ['source', 'creator', 'author', 'artist'])
-    proper_tags =   make_combined_list_from_params(post, [
-                        'tags', 'suffix_tags', 'custom_tags',
-                        'tags_artist', 'tags_character', 'tags_copyright', 'tags_general', 'tags_metadata', # rule34
-                        'categories', 'pornstars', 'characters', 'sources'
-    ])
-    improper_tags = make_combined_list_from_params(post, ['tags_from_title', 'tags_from_content'])
-    
-    ignore_tags = ['[delete]']
-    post['meta_tags'] = [ t for t in set(meta_tags) if t not in ignore_tags ]
-    post['proper_tags'] = [ t for t in set(proper_tags) if t not in ignore_tags ]
-    post['improper_tags'] = [ t for t in set(improper_tags) if t not in ignore_tags ]
-    
-    return post
-
-
-# get metadata for media
-def get_file_metadata(abs_path: str, id_primary: str|None, id_secondary: str|None=None) -> dict[str, Any]:
-
-    if id_primary == None:
-        return {}
-    
-    metadata = metadata_load_with_id(abs_path, id_primary)
-    id_comments = f'{id_primary}-comments'
-    comments_dict = metadata_load_with_id(abs_path, id_comments, use_shared_metadata=False)
-    metadata = combine_metadata(metadata, comments_dict)
-    if id_secondary:
-        metadata_sec = metadata_load_with_id(abs_path, id_secondary)
-        metadata = combine_metadata(metadata, metadata_sec)
-    
-    return metadata
-
-
-
-# parses post data from stem
-def parse_data_from_stem(stem: str, parser: StringParser) -> dict[str, Any]:
-    data = parser.parse(stem)
-    if data == None:
-        return {}
-    if 'source_id_TwitterSeleniumScraped' in data:
-        data['source_id'] = data['source_id_TwitterSeleniumScraped'].replace(' photo ', '-')
-    if 'date_uploaded_dt' in data:
-        data['date_uploaded'] = data['date_uploaded_dt'].split('T')[0]
-    data['suffix_tags'] = data.get('tags', [])
-    del data['tags']
-    data['tags_from_title'] = get_tags_from_title(data.get('title', ''))
-    return data
-
-# generates tags from title string
-def get_tags_from_title(title: str, remove_stopwords: bool=True) -> list[str]:
-    """ Returns list of tokens from a sentence. Removes stopwords """
-    tags: list[str] = []
-    
-    for c in '-_#,()[].;:*':
-        title = title.replace(c, ' ')
-    title_chars = [ c for c in title.lower() if c.isalnum() or c == ' ' ] # removes uncommen (non alphanumeric) chars
-    title = ''.join(title_chars)
-    
-    words = [ w for w in title.split() if (len(w) > 2 and len(w) < 20 and not w.isnumeric()) ]
-    if remove_stopwords:
-        words = [ w for w in words if w not in Global_Stopwords_End ]
-    
-    bigram_words = [ '-'.join(bg) for bg in nltk.bigrams(words) ] # type: ignore
-    tags = words + bigram_words
-    
-    return tags
-
-
-
-# 
-def get_media_type(suff: str) -> str:
-    if suff.lower() in ['.gif']: # HUOM: Some 'webp' can be gifs!!
-        return 'gif'
-    elif suff.lower() in ['.jpg', '.jpeg', '.png', '.webp']:
-        return 'image'
-    elif suff.lower() in ['.mp4', '.webm']:
-        return 'video'
-    return 'UNKNOWN_MEDIA'
-
-
-# 
-def get_media_id(post_data: dict[str, Any]):
-    id_ = '{}-{}'.format( post_data.get('source'), post_data.get('source_id') )
-    num = int(post_data.get('item_num', 0))
-    if num > 0:
-        id_ = f'{id_}-{num}'
-    return id_
-
-def get_post_id(post_data: dict[str, Any]):
-    id_ = '{}-{}'.format( post_data.get('source'), post_data.get('source_id') )
-    return id_
-
-def get_post_url(post_data: dict[str, Any]):
-    site_format: dict[str|None, Any] = {
-        'reddit': 'https://www.reddit.com/r/_/comments/{}',
-        'redgifs': 'https://www.redgifs.com/watch/{}',
-        'twitter': 'https://x.com/_/status/{}',
-        'bluesky': '',
-        'instagram': 'https://www.instagram.com/_/p/{}',
-        '3dhentai': '',
-        'danbooru': '',
-        'rule34': 'https://rule34.xxx/index.php?page=post&s=view&id={}'
-    }
-    source, source_id = post_data.get('source'), post_data.get('source_id')
-    url_format = site_format.get(source)
-    if url_format and source_id:
-        url = url_format.format(source_id)
-        return url
-    return None
-
-
-#### INTERNAL HELPERS ####
-
-# gets the components of a path (parent, stem and suffix)
-def path_components(path: str) -> Any:
-    from pathlib import Path
-    obj = Path(path)
-    stem = obj.stem
-    suffix = obj.suffix
-    parents = [ p for p in str(obj.parent).split('/') if p != '' ]
-    return parents, stem, suffix
-
-def make_combined_list_from_params(obj: dict[str, Any], param_list: list[str]) -> list[str]:
-    arr: list[str] = []
-    for param in param_list:
-        value = obj.get(param)
-        if value:
-            if not isinstance(value, list):
-                value = [value]
-            arr.extend(value) # type: ignore
-    return arr

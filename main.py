@@ -1,17 +1,16 @@
 # command line: uvicorn main:app --workers 1
 # production: gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app
-from fastapi import FastAPI, Response, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 import os
-# from fastapi.responses import FileResponse
 
 from config import MEDIA_FOLDERS
-from backend.fun.load import scan_media_libraries
-import backend.db as db
+from backend.app import scan_media_libraries
+from backend.util import db
 
 
 class Query(BaseModel):
@@ -71,6 +70,7 @@ def prune_post_object(obj):
 async def APP_search_posts(query: Query):
     print(query)
     posts_dict = db.read_table_as_dict('posts')
+    posts_dict = { k: v for k, v in posts_dict.items() if v.get('HAS_LINKED_MEDIA') }
     post_objects = [ prune_post_object(obj) for obj in posts_dict.values() ]
     return { "posts": post_objects }
 
@@ -113,5 +113,5 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=8000,
         workers=1,
-        reload=True,
+        reload=False,
     )

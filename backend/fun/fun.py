@@ -1,4 +1,4 @@
-""" Generic functions """
+""" SEEMS TO BE UNUSED!! """
 from typing import Any
 
 from handymatt import JsonHandler

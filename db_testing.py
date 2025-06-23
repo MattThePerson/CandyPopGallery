@@ -1,4 +1,4 @@
-import backend.db as db
+import backend.util.db as db
 
 
 def main():

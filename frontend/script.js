@@ -1,5 +1,7 @@
 
 
+/* - FETCH FUNCTIONS ----------- */
+
 /* simple url args */
 function makeApiRequestGET(request, args, callback) {
 
@@ -11,7 +13,7 @@ function makeApiRequestGET(request, args, callback) {
     fetch(api_call)
         .then(response => {
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error(`Network response was not ok. status: ${response.status}`);
             }
             return response.json();
         })
@@ -19,7 +21,7 @@ function makeApiRequestGET(request, args, callback) {
             callback(data)
         })
         .catch(error => {
-            console.error('Fetch error:', error);
+            console.error(`Get error (${request}):`, error);
     });
     
 }
@@ -39,20 +41,33 @@ function makeApiRequestPOST(request, data, callback) {
     fetch(request, options)
         .then(response => {
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error(`Network response was not ok. status: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
-            callback(data)
+            try {
+                callback(data)
+            } catch (error) {
+                console.error(`Callback error (${request}):`, error);
+            }
         })
         .catch(error => {
-            console.error('Fetch error:', error);
+            console.error(`Post error (${request}):`, error);
     });
 
 }
 
 
+/* - HELPER FUNCS ------------ */
+
+function isImageFile(filename) {
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.avif'];
+    return imageExtensions.some(ext => filename.toLowerCase().endsWith(ext));
+}
+
+
+/* - MAIN --------------- */
 
 const query = {
     search_query: null,
@@ -63,14 +78,16 @@ const query = {
 makeApiRequestPOST('/api/search-posts', query, res => {
 
     console.log(res);
-    
+
     for (let idx = 0; idx < res.posts.length; idx++) {
         const post = res.posts[idx];
         
         /* set first img */
         const media_src = post.media_objects[0].src;
+        // console.log(media_src);
         const item = document.querySelectorAll('.item')[idx];
-        if (media_src.endsWith('.jpg')) {
+        if (!item) return;
+        if (isImageFile(media_src)) {
             const img = document.createElement('img');
             img.src = `/media/${encodeURIComponent(media_src)}`;
             item.appendChild(img);
@@ -82,10 +99,11 @@ makeApiRequestPOST('/api/search-posts', query, res => {
         
         /* get post data */
         const post_id = post.post_id;
-        console.log(post_id);
         makeApiRequestGET('/api/get-post-data', [post_id], post_data => {
-            console.log(post_data);
+            // console.log(post_data);
         });
+
+        // return;
     }
 });
 
