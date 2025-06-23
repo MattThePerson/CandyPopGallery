@@ -64,6 +64,14 @@ body {
     background: red;
 }
 
+.item img, .item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;         /* crop to fill container */
+    object-position: center;   /* center the image */
+    display: block;
+}
+
 /* feed */
 #content-styler.feed {
     display: flex;
@@ -80,9 +88,9 @@ body {
 
 /* grid */
 #content-styler.grid {
-    display: inline-grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 3px; /* optional spacing between items */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
     padding: 1rem;
 }
 

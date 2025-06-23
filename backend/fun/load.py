@@ -42,8 +42,9 @@ def scan_media_libraries(media_dirs: list[str]) -> None:
     # generate media objects from media paths
     print('Generating post objects for {:_} media ...'.format(len(media_paths)))
     start = time.time()
-    saved_post_objects = db.read_table_as_dict('posts')
-    media_objects = load_media_objects(media_paths, media_dirs, saved_post_objects, FILENAME_PARSER, redo=redo_media_extract)
+    saved_posts = db.read_table_as_dict('posts')
+    saved_posts_by_rel_path = {} # { obj['rel_path']: obj for obj in saved_posts.values() }
+    media_objects = load_media_objects(media_paths, media_dirs, saved_posts_by_rel_path, FILENAME_PARSER, redo=redo_media_extract)
 
     # filter small media objects (eg. 'image does not exist' images)
     before_size = len(media_objects)
@@ -53,6 +54,7 @@ def scan_media_libraries(media_dirs: list[str]) -> None:
     
     # generate posts from media objects (basically combine media from same post)
     post_objects = generate_post_objects(list(media_objects.values()))
+    print('Generated {:_} post objects'.format(len(post_objects)))
     
     # save to db
     db.write_objects_to_db(post_objects, 'posts')
@@ -89,7 +91,7 @@ def get_media_from_dirs(dirs: list[str]) -> list[str]:
     MEDIA_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm']
     files: list[Path] = []
     for i, base_dir in enumerate(dirs):
-        print('Scanning folder ({}/{}) "{}"'.format(i+1, len(dirs), base_dir), end='')
+        print('Scanning media dirs ({}/{}) "{}"'.format(i+1, len(dirs), base_dir), end='')
         if not os.path.exists(base_dir):
             print('  ... WRONG PATH')
         else:
@@ -103,7 +105,7 @@ def get_media_from_dirs(dirs: list[str]) -> list[str]:
 
 
 # 
-def load_media_objects(media_paths: list[str], media_dirs: list[str], saved_post_objects: dict[str, Any], parser: StringParser, redo: bool=False) -> dict[str, Any]:
+def load_media_objects(media_paths: list[str], media_dirs: list[str], saved_posts_by_rel_path: dict[str, dict], parser: StringParser, redo: bool=False) -> dict[str, Any]:
     """ Given a list of media paths and saved posts,  """
     posts_dict: dict[str, Any] = {}
     extractions_count = 0
@@ -112,8 +114,9 @@ def load_media_objects(media_paths: list[str], media_dirs: list[str], saved_post
         rel_path = abs_path.replace(media_dir, '')
         if idx%1 == 0:
             print('\rLoading posts ({:_}/{:_}) ({:.1f}%) |{:<75}|     '.format( idx+1, len(media_paths), ((idx+1)/len(media_paths)*100), rel_path[:73] ), end='')
-        post = saved_post_objects.get(rel_path) # get post from pre-existing posts
-        if post == None or redo:
+        post = saved_posts_by_rel_path.get(rel_path) # get post from pre-existing posts
+        # print(post is None)
+        if post is None or redo:
             post = _extract_media_data(idx, rel_path, abs_path, parser)
             extractions_count += 1
         posts_dict[rel_path] = post

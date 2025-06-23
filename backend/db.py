@@ -2,15 +2,15 @@ import sqlite3
 import json
 
 
-DB_PATH = 'data/posts.db'
+DB_PATH = 'data/app.db'
 
 
-def write_object_to_db(data: dict, table: str):
+def write_object_to_db(entry_id: str, data: dict, table: str):
     """ Write a single dictionary (JSON object) into a specified SQLite table. """
     with sqlite3.connect(DB_PATH) as conn:
         _ensure_table_exists(conn, table)
         cur = conn.cursor()
-        cur.execute(f"INSERT INTO {table} (data) VALUES (?)", (json.dumps(data),))
+        cur.execute(f"INSERT INTO {table} (id, data) VALUES (?, ?)", (entry_id, json.dumps(data),))
         conn.commit()
 
 
@@ -25,7 +25,7 @@ def write_objects_to_db(objects_dict: dict[str, dict], table: str):
         )
 
 
-def read_object_from_db(entry_id: int, table: str) -> dict|None:
+def read_object_from_db(entry_id: str, table: str) -> dict|None:
     """ Read a single JSON entry from the database by ID. """
     with sqlite3.connect(DB_PATH) as conn:
         _ensure_table_exists(conn, table)
