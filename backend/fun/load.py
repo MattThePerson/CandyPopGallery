@@ -4,7 +4,7 @@ from pathlib import Path
 
 from handymatt import StringParser
 
-from .post_data import extract_post_data
+from .post_data import extract_post_data, generate_media_objects
 
 
 
@@ -25,18 +25,6 @@ def get_media_path_tuples_from_dirs(dirs: list[str], media_extensions: list[str]
     return files_str
 
 
-def _get_post_id_from_filename(fn):
-    """ Assumes id can be like this `filename [id].ext` or this `filename [id] #Tag1.ext` """
-    parts = fn.split('].')
-    if '] #' in fn:
-        parts = fn.split('] #') # 
-    if len(parts) == 1:
-        return fn
-    partial_str = parts[-2]
-    if '[' not in partial_str:
-        return fn
-    return partial_str.split('[')[-1]
-
 # 
 def group_media_paths_into_posts(media_path_tuples: list[tuple[str, str]]) -> dict[str, list[tuple[str, str]]]:
     post_media: dict[str, list] = {}
@@ -50,17 +38,24 @@ def group_media_paths_into_posts(media_path_tuples: list[tuple[str, str]]) -> di
 
 #
 def generate_or_load_post_objects(post_media_paths: dict[str, list[tuple[str, str]]], existing_post_objects: dict[str, dict], parser: StringParser, redo: bool=False) -> dict[str, dict]:
-    """ For 'unloaded' posts (just a list of filepaths), finds post from existing posts or generates post objects """
+    """ For 'bare' post objects (just a list of filepaths), find post from existing posts or generate post objects """
     posts: dict[str, dict] = {}
-    extractions_count = 0
+    extractions_count, media_linked_count = 0, 0
     for idx, (post_id, media_path_tuples) in enumerate(post_media_paths.items()):
-        print('\rLoading/Generating posts ({:_}/{:_}) ({:.1f}%) |[{:<75}]|     '.format( idx+1, len(post_media_paths), ((idx+1)/len(post_media_paths)*100), post_id ), end='')
+        print('\rLoading/Generating posts ({:_}/{:_}) ({:.1f}%) [{}]     '.format( idx+1, len(post_media_paths), ((idx+1)/len(post_media_paths)*100), post_id ), end='')
+        (first_item_abs_path, parent_dir) = media_path_tuples[0]
+        abs_paths = [ pth for pth, _ in media_path_tuples ]
+        rel_paths = [ pth.replace(parent_dir, '') for pth in abs_paths ]
         obj = existing_post_objects.get(post_id)
         if obj is None or redo:
-            obj = extract_post_data(post_id, media_path_tuples, parser)
+            obj = extract_post_data(post_id, first_item_abs_path, parser) # doesn't produce media objects
             extractions_count += 1
+        if (obj.get('media_objects') is None) or _media_objects_changed(obj.get('media_objects'), rel_paths):
+            obj['media_objects'] = generate_media_objects(post_id, rel_paths, abs_paths, parser)
+            obj['media_count'] = len(obj['media_objects'])
+            media_linked_count += 1
         posts[post_id] = obj
-    print('\nDone. Extracted data for {:_}/{:_} post objects'.format(extractions_count, len(post_media_paths)))
+    print('\nDone. Extracted data for {:_}/{:_} posts (linked media for {:_} posts)'.format(extractions_count, len(post_media_paths), media_linked_count))
     return posts
 
 
@@ -75,7 +70,6 @@ def combine_loaded_and_existing_posts(loaded: dict[str, dict], existing: dict[st
         obj['HAS_LINKED_MEDIA'] = True
         combined[pid] = obj
     return combined
-
 
 
 
@@ -130,5 +124,24 @@ def combine_media_objects_into_post_objects(media_objects: list[dict]) -> dict[s
     return posts
 
 
+def _get_post_id_from_filename(fn):
+    """ Assumes id can be like this `filename [id].ext` or this `filename [id] #Tag1.ext` """
+    parts = fn.split('].')
+    if '] #' in fn:
+        parts = fn.split('] #') # 
+    if len(parts) == 1:
+        return fn
+    partial_str = parts[-2]
+    if '[' not in partial_str:
+        return fn
+    return partial_str.split('[')[-1]
 
+
+
+def _media_objects_changed(media_objects, rel_paths):
+    """ Checks if difference between media_obejcts src's and rel_paths """
+    for obj, rel_path in zip(media_objects, rel_paths):
+        if obj['src'] != rel_path:
+            return True
+    return False
 

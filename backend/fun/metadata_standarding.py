@@ -124,11 +124,14 @@ metadata_unifying_options: dict[str, Any] = {
 
 
 # 
-def standardize_metadata(metadata: dict[str, Any], source: str) -> dict[str, Any]:
+def standardize_metadata(metadata: dict[str, Any], source: str|None) -> dict[str, Any]:
     """ For the metadata of a given post, keep desired keys, map to new keynames and add general processing """
+
     global metadata_unifying_options
+    if source is None:
+        return metadata
     options = metadata_unifying_options.get(source.lower())
-    if options == None:
+    if options is None:
         return metadata
     keep_keys = options['keep_keys'] + ['comments']
     keys_map = options.get('keys_map', {})

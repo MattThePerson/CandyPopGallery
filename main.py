@@ -9,8 +9,8 @@ from pydantic import BaseModel
 import os
 
 from config import MEDIA_FOLDERS
-from backend.app import scan_media_libraries
 from backend.util import db
+from backend.app import scan_media_libraries
 
 
 class Query(BaseModel):

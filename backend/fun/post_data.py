@@ -1,5 +1,6 @@
 from typing import Any
 import os
+from time import sleep
 from datetime import datetime
 import nltk # type: ignore
 
@@ -13,15 +14,14 @@ Global_Post_ID = 0
 Global_Stopwords_End = None
 
 
-def extract_post_data(post_id: str, media_path_tuples: list[tuple[str, str]], parser: StringParser) -> dict[str, Any]:
+def extract_post_data(post_id: str, first_item_abs_path: str, parser: StringParser) -> dict[str, Any]:
     """ Given post_id and list of media paths, extracts data from filenames and metdata and generates post object """
     global Global_Post_ID
-    if media_path_tuples is []:
-        raise Exception(f'Post with id "{post_id}" has no media_paths')
 
-    (first_item_abs_path, parent_dir) = media_path_tuples[0] # media path is a tuple of [path, parent_dir]
-    first_item_rel_path = first_item_abs_path.replace(parent_dir, '')
-    post_parents, first_item_stem, _ = path_components(first_item_rel_path)
+    # (first_item_abs_path, parent_dir) = media_path_tuples[0] # media path is a tuple of [path, parent_dir]
+    # first_item_rel_path = first_item_abs_path.replace(parent_dir, '')
+    
+    post_parents, first_item_stem, _ = path_components(first_item_abs_path)
     post_source = post_parents[0] if len(post_parents) > 0 else 'SOURCE_UNKNOWN'
     creator = post_parents[1] if len(post_parents) > 1 else 'CREATOR_UNKNOWN'
     
@@ -33,7 +33,7 @@ def extract_post_data(post_id: str, media_path_tuples: list[tuple[str, str]], pa
     if source_id is None:
         global_post_id = str(Global_Post_ID)
         Global_Post_ID += 1
-    
+        
     # [METADATA] get data from local .json files
     metadata = {}
     if source_id is not None:
@@ -56,8 +56,8 @@ def extract_post_data(post_id: str, media_path_tuples: list[tuple[str, str]], pa
         'upvotes': -1,
         'downvotes': -1,
         'views': -1,
-        'media_count': len(media_path_tuples),
-        'media_objects': [],
+        'media_count': -1,
+        'media_objects': None,
     }
 
     # [ADD] combine metadata
@@ -65,24 +65,6 @@ def extract_post_data(post_id: str, media_path_tuples: list[tuple[str, str]], pa
         if data_dict:
             for k, v in data_dict.items():
                 post[k] = v
-    
-    # [MEDIA OBJECTS] generate
-    media_objects = []
-    for (abs_path, parent_dir) in media_path_tuples:
-        rel_path = abs_path.replace(parent_dir, '')
-        _, stem, suffix = path_components(rel_path)
-        item_num = parse_data_from_stem(stem, parser).get('item_num', -1)
-        obj = {
-            'media_id': get_media_id(post_id, item_num),
-            'item_num': item_num,
-            'src': rel_path,
-            'filename': stem + suffix,
-            'suffix': suffix,
-            'media_type': get_media_type(suffix),
-            'filesize_bytes': os.path.getsize(abs_path),
-        }
-        media_objects.append(obj)
-    post['media_objects'] = media_objects
     
     # Handle edge cases
     if 'reddit' == post_source and not creator.startswith('u_'):
@@ -104,6 +86,37 @@ def extract_post_data(post_id: str, media_path_tuples: list[tuple[str, str]], pa
     
     return post
 
+
+
+def read_metadata_from_local_json_files(source_id: str|None, secondary_source_id: str|None, post_source: str|None, first_item_abs_path: str):
+    """ get metadata for a file from local json files """
+    if source_id is None:
+        return {}
+    metadata = get_file_metadata(first_item_abs_path, source_id, secondary_source_id)
+    metadata = standardize_metadata(metadata, post_source)
+    return metadata
+
+
+# 
+def generate_media_objects(post_id: str, rel_paths: list[str], abs_paths: list[str], parser: StringParser) -> list[dict]:
+
+    # [MEDIA OBJECTS] generate
+    media_objects = []
+    for (rel_path, abs_path) in zip(rel_paths, abs_paths):
+        # rel_path = abs_path.replace(parent_dir, '')
+        _, stem, suffix = path_components(rel_path)
+        item_num = parse_data_from_stem(stem, parser).get('item_num', -1)
+        obj = {
+            'media_id': get_media_id(post_id, item_num),
+            'item_num': item_num,
+            'src': rel_path,
+            'filename': stem + suffix,
+            'suffix': suffix,
+            'media_type': get_media_type(suffix),
+            'filesize_bytes': os.path.getsize(abs_path),
+        }
+        media_objects.append(obj)
+    return media_objects
 
 
 # get metadata for media
@@ -226,6 +239,8 @@ def make_combined_list_from_params(obj: dict[str, Any], param_list: list[str]) -
 
 # 
 def _load_nltk_stopwords():
+    print()
     nltk.download('stopwords') # type: ignore
+    sleep(0.5)
     return nltk.corpus.stopwords.words('english')
 

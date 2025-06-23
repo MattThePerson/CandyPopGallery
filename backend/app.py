@@ -32,7 +32,9 @@ def scan_media_libraries(media_dirs: list[str]) -> None:
     # [STEP 3] Generate/Load post objects
     existing_post_objects = db.read_table_as_dict('posts')
     print("[LOAD] Loading/Generating posts")
+    start = time.time()
     loaded_post_objects = generate_or_load_post_objects(post_media_paths, existing_post_objects, parser=FILENAME_PARSER, redo=redo_data_extract)
+    print('[LOAD] loaded {:_} posts in {:.1f} sec ({:.3f} ms/post)'.format(len(loaded_post_objects), (time.time()-start), ((time.time()-start)*1000/len(loaded_post_objects))))
     combined_post_objects = combine_loaded_and_existing_posts(loaded_post_objects, existing_post_objects)
     print("[COMBINE] Combined posts with saved posts (total {:_})".format(len(combined_post_objects)))
     db.write_objects_to_db(combined_post_objects, 'posts')
