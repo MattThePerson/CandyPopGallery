@@ -90,7 +90,7 @@ async def APP_query_posts(relative_path: str):
     for basedir in MEDIA_FOLDERS:
         media_path = basedir + '/' + relative_path
         if os.path.isfile(media_path):
-            return FileResponse(media_path)
+            return FileResponse(media_path, media_type="video/mp4")
     raise HTTPException(status_code=404, detail="File not found")
 
 
