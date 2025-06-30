@@ -1,0 +1,64 @@
+
+.ControlBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgb(4, 32, 40);
+    padding: 0.5rem 3%;
+    width: 100%;
+    height: fit-content;
+    
+    * {
+        display: flex;
+        align-items: center;
+        font-family: sans-serif;
+        font-weight: bold;
+        font-size: 0.9rem;
+        color: grey;
+    }
+
+    .container {
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .button {
+        /* padding: 0.3rem 0.3rem; */
+        background: rgb(41, 41, 41);
+        border-radius: 10px;
+        border: 1.5px solid #0005;
+        overflow: hidden;
+        user-select: none;
+    }
+    
+    .button div {
+        padding: 0.3rem 0.2rem;
+        color: white;
+    }
+    .button div:hover {
+        background: green;
+    }
+    .button > div:first-child { padding-left: 0.7rem; }
+    .button > div:last-child { padding-right: 0.7rem; }
+
+    .button.selected {
+        background: rgb(116, 116, 116);
+    }
+
+    .button:hover {
+        cursor: pointer;
+        border-color: rgba(213, 142, 10, 0.561);
+    }
+
+    .order-button img {
+        height: 0.9rem;
+    }
+    .order-button:hover {
+        transform: rotateX(180deg);
+    }
+    .order-button.asc {
+        background: orange;
+        transform: rotateX(180deg);
+    }
+}
+

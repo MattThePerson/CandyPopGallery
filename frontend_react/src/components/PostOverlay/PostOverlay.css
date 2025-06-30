@@ -1,0 +1,21 @@
+
+.PostOverlay {
+    z-index: 999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-y: hidden;
+    position: fixed;
+    
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000c;
+
+    * { box-sizing: border-box; }
+    
+    .post_id {
+        color: red;
+    }
+}
