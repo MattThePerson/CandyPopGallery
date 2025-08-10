@@ -1,0 +1,15 @@
+# GIT:
+# To stop tracking config.yaml:
+#   git update-index --assume-unchanged config.yaml
+# To start tracking again:
+#   git update-index --no-assume-unchanged config.yaml
+
+
+FilenameFormats: [
+    "[{date_uploaded}] {title};opt (item-{item_num:d});opt [{secondary_source_id:S}];opt [{source_id:S}]",
+    "{title}",
+]
+
+
+MediaFolders:
+    - C:\videos\path\here # add media folders here
