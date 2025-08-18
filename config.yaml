@@ -5,11 +5,15 @@
 #   git update-index --no-assume-unchanged config.yaml
 
 
-FilenameFormats: [
-    "[{date_uploaded}] {title};opt (item-{item_num:d});opt [{secondary_source_id:S}];opt [{source_id:S}]",
-    "{title}",
+filename_formats: [
+    "{parent_dir}/{source}/{community}/[{date_uploaded}] {title};opt (item-{item_num:d});opt [{secondary_source_id:S}];opt [{source_id:S}].{ext}",
+    "{parent_dir}/{title}.{ext}",
 ]
 
 
-MediaFolders:
-    - C:\videos\path\here # add media folders here
+media_folders:
+    # - A:\Whispera\gallery-dl\bluesky
+    # - A:\Whispera\gallery-dl\reddit
+    - A:\Whispera\gallery-dl
+    # - A:\Whispera\gallery-dl\3dHentai\AnimX
+    # - A:\Whispera\gallery-dl\fapello

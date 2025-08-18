@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"log"
@@ -8,8 +8,8 @@ import (
 )
 
 type Config struct {
-	FilenameFormats []string
-	MediaFolders    []string
+	FilenameFormats []string `yaml:"filename_formats"`
+	MediaFolders    []string `yaml:"media_folders"`
 }
 
 // Get Config struct from .yaml file

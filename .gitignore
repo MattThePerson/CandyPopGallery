@@ -1,8 +1,9 @@
 
-
+# general
 .logs/
 .vscode/
 bin/
-
 vendor/
 
+# 
+_test*

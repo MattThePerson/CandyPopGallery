@@ -56,3 +56,15 @@ POST        `/admin/generate/tfidf`  // tf-idf model based on post `tags|comment
 |-- shared/
 |-- global.css
 |-- index.html `redirects to 'pages/home/page.html'`
+
+
+
+# DB
+
+
+Tables:
+- Posts `serialized data`
+- UserInteractions `COLS: date_added, is_favourite, favourited_date, views, last_viewed, likes, comments`
+- Views `COLS: date_time, post_id`
+
+

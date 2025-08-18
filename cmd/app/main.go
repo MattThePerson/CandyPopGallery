@@ -7,6 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
+	"github.com/MattThePerson/CandyPopGallery/internal"
 )
 
 var (
@@ -32,7 +34,7 @@ func main() {
 	flag.Parse()
 
 	// Get config variables
-	var config Config = GetConfig("config.yaml")
+	config := internal.GetConfig("config.yaml")
 
 	fmt.Println(config.MediaFolders) // TODO: Remove!
 
@@ -62,7 +64,7 @@ func main() {
 	})
 
 	// Static folders
-	e.Static("/", "frontend")
+	e.Static("/", "frontend/dist")
 
 	addr := fmt.Sprintf(":%d", *serverPort)
 	e.Logger.Fatal(e.Start(addr))
