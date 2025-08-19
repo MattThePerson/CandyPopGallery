@@ -6,14 +6,21 @@
 
 
 filename_formats: [
-    "{parent_dir}/{source}/{community}/[{date_uploaded}] {title};opt (item-{item_num:d});opt [{secondary_source_id:S}];opt [{source_id:S}].{ext}",
-    "{parent_dir}/{title}.{ext}",
+    "{source}/{community}/[{date_uploaded}] {title} (item-{item_num:d}) [{secondary_source_id:S}] [{source_id:S}].{ext}",
+    "{source}/{community}/[{date_uploaded}] {title} [{secondary_source_id:S}] [{source_id:S}].{ext}",
+    "{source}/{community}/[{date_uploaded}] {title} (item-{item_num:d}) [{source_id:S}].{ext}",
+    "{source}/{community}/[{date_uploaded}] {title} [{source_id:S}] #{tags_string}.{ext}",
+    "{source}/{community}/[{date_uploaded}] {title} [{source_id:S}].{ext}",
+    "{source}/{community}/[{date_uploaded}] {title} {{source_id:S}}.{ext}",
+    # "{source}/{community}/{title}.{ext}",
 ]
 
 
 media_folders:
     # - A:\Whispera\gallery-dl\bluesky
+    # - A:\Whispera\gallery-dl\twitter
     # - A:\Whispera\gallery-dl\reddit
-    - A:\Whispera\gallery-dl
+    # - A:\Whispera\gallery-dl
+    - A:\Whispera\gallery-dl-test
     # - A:\Whispera\gallery-dl\3dHentai\AnimX
-    # - A:\Whispera\gallery-dl\fapello
+    # - A:\Whispera\gallery-dl\rule34
