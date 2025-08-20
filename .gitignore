@@ -5,6 +5,6 @@
 bin/
 vendor/
 
-# 
+# custom
+.old
 _test*
-frontend

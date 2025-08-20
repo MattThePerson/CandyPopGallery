@@ -1,0 +1,64 @@
+:root {
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    place-items: center;
+}
+
+/* NAV BAR */
+
+#app {
+    width: 100%;
+    height: fit-content;
+    min-height: 100vh;
+    background: yellow;
+}
+
+nav {
+    background: #333;
+    width: 100%;
+    height: 1.8rem;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    margin: 0;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+nav button {
+    border: none;
+    height: calc(100% - 8px);
+    padding: 0px 0.3rem 2px 0.3rem;
+    margin: 4px 0;
+    cursor: pointer;
+    background: none;
+    color: #888;
+    border-radius: 3px;;
+}
+
+nav button:hover {
+    text-decoration: underline;
+}
+nav button.highlighted {
+    color: #eee;
+    /* background: #0005; */
+    text-decoration: underline;
+}
+

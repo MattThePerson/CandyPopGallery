@@ -65,6 +65,10 @@ func main() {
 
 	// Static folders
 	e.Static("/", "frontend/dist")
+	e.File("/home", "frontend/dist/index.html")
+	e.File("/dashboard", "frontend/dist/index.html")
+	e.File("/settings", "frontend/dist/index.html")
+	e.File("/about", "frontend/dist/index.html")
 
 	addr := fmt.Sprintf(":%d", *serverPort)
 	e.Logger.Fatal(e.Start(addr))
