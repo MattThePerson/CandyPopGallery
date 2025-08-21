@@ -14,28 +14,29 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /* html */ `
     </nav>
 `
 
-/* page adder funcs */
-const page_adders = {
+/* page constructor funcs */
+const page_constructors = {
     "/home":        HomePage,
     "/dashboard":   DashboardPage,
-    "/settings":   () => 'settings',
-    "/about":   () => 'about',
+    "/settings":    (selector: string) => $(selector).text('settings'),
+    "/about":       (selector: string) => $(selector).text('about'),
 }
 
 /* load page */
 const loadPage = () => {
     // get path name
     let name = location.pathname;
-    if (!(name in page_adders)) {
+    if (!(name in page_constructors)) {
         name = "/home"
         window.history.replaceState({}, "", name);
     }
     // get adder func
-    const adder_func = page_adders[name as keyof typeof page_adders];
-    if (!adder_func) {
+    const page_constructor_func = page_constructors[name as keyof typeof page_constructors];
+    if (!page_constructor_func) {
         throw new Error("no page adder for: "+name)
     }
-    $("#page").html(adder_func());
+    // $("#page").html(adder_func());
+    page_constructor_func("#page")
     // update buttons
     $("nav button").each((_, btn) => btn.classList.remove("highlighted"));
     $("button#"+location.pathname.replace("/", "btn-")).addClass("highlighted");
@@ -43,10 +44,21 @@ const loadPage = () => {
 
 /* button event listeners */
 $("nav button").each((_, btn) => {
-    $(btn).on('click', () => {
-        window.history.pushState({}, "" , btn.id.replace("btn-", "/"));
-        loadPage();
+    const new_url = btn.id.replace("btn-", "/");
+    $(btn).on('click', e => {
+        if (e.ctrlKey || e.metaKey) {
+            window.open(new_url, "_blank");
+        } else { // normal click
+            window.history.pushState({}, "" , new_url);
+            loadPage();
+        }
     })
+    // middle click
+    btn.addEventListener("mouseup", (e) => {
+    if (e.button === 1) {
+            window.open(new_url, "_blank");
+        }
+    });
 })
 
 loadPage()
