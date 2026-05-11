@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 
 # Set backend port
 $BACKEND_PORT = 8020
-$EXE_NAME = "App.exe"
+$EXE_NAME = "CandyPopGallery.exe"
 
 # Navigate to project root
 Set-Location -Path (Split-Path -Parent $MyInvocation.MyCommand.Path)
@@ -17,7 +17,3 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "[.ps1] ERROR: Build exited with non-zero status $LASTEXITCODE"
     exit 1
 }
-
-# Run go
-Write-Host "[.ps1] Starting $EXE_NAME on port $BACKEND_PORT and extra args: '$args'"
-& .\bin\$EXE_NAME $args

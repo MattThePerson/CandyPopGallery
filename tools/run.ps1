@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 
 # Set backend port
 $BACKEND_PORT = 8020
-$EXE_NAME = "App.exe"
+$EXE_NAME = "CandyPopGallery.exe"
 
 # Navigate to project root
 Set-Location -Path (Split-Path -Parent $MyInvocation.MyCommand.Path)
