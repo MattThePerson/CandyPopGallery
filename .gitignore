@@ -4,6 +4,7 @@
 .vscode/
 bin/
 vendor/
+config.yaml
 
 # custom
 .old

@@ -1,8 +1,11 @@
 package internal
 
 import (
+	"bufio"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -18,7 +21,7 @@ func GetConfig(fn string) Config {
 	// Read file
 	data, err := os.ReadFile(fn)
 	if err != nil {
-		log.Fatal(err)
+	    return generateConfig(fn)
 	}
 
 	// Parse into Config
@@ -28,5 +31,35 @@ func GetConfig(fn string) Config {
 		log.Fatal(err)
 	}
 
+	return c
+}
+
+func generateConfig(fn string) Config {
+
+    // read media folder from user
+    fmt.Print("Enter media folder path: ")
+	reader := bufio.NewReader(os.Stdin)
+	folder, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+	}
+	folder = strings.TrimSpace(folder)
+
+	// create config obj
+	c := Config{
+		FilenameFormats: []string{"{source}/{community}/[{date_uploaded}] {title} [{source_id:S}].{ext}"},
+		MediaFolders:    []string{folder},
+	}
+
+	// marshal and save
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := os.WriteFile(fn, data, 0644); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Config saved to %s\n", fn)
 	return c
 }
