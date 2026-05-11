@@ -1,12 +1,20 @@
 
 EXE = CandyPopGallery
-EXE_MAIN = "./bin/$(EXE)"
-EXE_WORKER = "./bin/$(EXE)_worker"
+EXE_MAIN = bin/$(EXE)
+EXE_WORKER = bin/$(EXE)_worker
 
 PORT_DEV = 8021
 PORT_PROD = 8020
 
-.PHONY: build, build_frontend, run_dev, run, tidy, clean, clean_frontend
+.PHONY: all build_all build build_frontend run_dev run tidy clean clean_frontend install
+
+all: build_all
+
+install:
+	go mod download
+	cd frontend && npm install
+
+build_all: build build_frontend
 
 build: $(EXE_MAIN) $(EXE_WORKER)
 
