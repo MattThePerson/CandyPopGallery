@@ -1,4 +1,4 @@
-package models
+package internal
 
 // PostData
 type PostData struct {
@@ -12,7 +12,7 @@ type PostData struct {
 	UploadDate string `json:"date_uploaded"`
 
 	// metadata
-	Source    string `json:"source"`
+	Platform  string `json:"platform"`
 	Community string `json:"community"` // uploader|subreddit|page
 
 	Tags         []string `json:"tags"`
@@ -23,6 +23,7 @@ type PostData struct {
 	Likes    int      `json:"likes"`
 	Views    int      `json:"views"`
 	Comments []string `json:"comments"`
+	// LikesRatio float
 
 	// media
 	MediaCount int         `json:"media_count"`

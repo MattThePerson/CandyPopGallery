@@ -16,22 +16,22 @@ install:
 
 build_all: build build_frontend
 
-build: $(EXE_MAIN) $(EXE_WORKER)
+build: build_main build_worker
 
-$(EXE_MAIN):
-	go build -ldflags="-s -w" -o "$(EXE_MAIN)" ./cmd/app
+build_main:
+	go build -ldflags="-s -w" -o "$(EXE_MAIN)" .
 
-$(EXE_WORKER):
+build_worker:
 	go build -o "$(EXE_WORKER)" ./cmd/worker
 
 build_frontend:
 	cd frontend && npm run build
 
-run_dev: $(EXE_MAIN)
-	./$(EXE_MAIN) --dev --port $(PORT_DEV)
+run_dev:
+	go run . --dev --port $(PORT_DEV)
 
-run: $(EXE_MAIN)
-	./$(EXE_MAIN)
+run:
+	go run .
 
 tidy:
 	go mod tidy

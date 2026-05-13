@@ -1,4 +1,4 @@
-package internal
+package types
 
 // Set is a collection of unique elements
 type Set struct {

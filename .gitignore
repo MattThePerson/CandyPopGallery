@@ -1,12 +1,13 @@
 
 # general
-.logs/
-.vscode/
 bin/
 vendor/
-config.yaml
+.*.swp
+.vscode/
+.logs/
 
 # custom
+config.yaml
 *_old
 .old
 _test*

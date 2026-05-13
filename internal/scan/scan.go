@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MattThePerson/CandyPopGallery/internal"
-	"github.com/MattThePerson/CandyPopGallery/internal/models"
 	"github.com/MattThePerson/string_parser"
+	"github.com/MattThePerson/CandyPopGallery/internal"
+	"github.com/MattThePerson/CandyPopGallery/internal/types"
 )
 
 // SIMPLE
@@ -51,10 +51,10 @@ func ScanMediaDirs(base_dirs []string, filename_formats []string, rescan bool) e
 	}
 
 	// get posts from db
-	post_from_db := map[string]models.PostData{} // TODO: read from db
+	post_from_db := map[string]internal.PostData{} // TODO: read from db
 
 	// STEP 3: get post objects
-	existing_posts := map[string]models.PostData{}
+	existing_posts := map[string]internal.PostData{}
 	new_post_files := post_files
 	if !rescan {
 		new_post_files, existing_posts = filterExistingPosts(post_files, post_from_db)
@@ -224,10 +224,10 @@ func generatePostFileObjects(post_files map[string][]string, base_dirs []string)
 }
 
 // filterExistingPosts
-func filterExistingPosts(post_files map[string]PostFiles, db_posts map[string]models.PostData) (map[string]PostFiles, map[string]models.PostData) {
+func filterExistingPosts(post_files map[string]PostFiles, db_posts map[string]internal.PostData) (map[string]PostFiles, map[string]internal.PostData) {
 
 	new_post_files := map[string]PostFiles{}
-	existing_posts := map[string]models.PostData{}
+	existing_posts := map[string]internal.PostData{}
 
 	for pid, post_files_obj := range post_files {
 		post_obj, ok := db_posts[pid]
@@ -242,9 +242,9 @@ func filterExistingPosts(post_files map[string]PostFiles, db_posts map[string]mo
 }
 
 // generatePostObjects
-func generatePostObjects(post_files map[string]PostFiles, base_filename_formats []string) (map[string]models.PostData, error) {
+func generatePostObjects(post_files map[string]PostFiles, base_filename_formats []string) (map[string]internal.PostData, error) {
 
-	post_objects := map[string]models.PostData{}
+	post_objects := map[string]internal.PostData{}
 
 	parsers_map := getParsersMap(post_files, base_filename_formats)
 
@@ -293,9 +293,9 @@ func generatePostObjects(post_files map[string]PostFiles, base_filename_formats 
 }
 
 // createPostDataObject
-func createPostDataObject(pid string, dt map[string]any, media []models.MediaData) (models.PostData, error) {
+func createPostDataObject(pid string, dt map[string]any, media []internal.MediaData) (internal.PostData, error) {
 
-	pd := models.PostData{}
+	pd := internal.PostData{}
 
 	// marshal data
 	dt_bytes, err := json.Marshal(dt)
@@ -323,7 +323,7 @@ func getParsersMap(post_files map[string]PostFiles, base_filename_formats []stri
 	mp := map[string]*string_parser.StringParser{}
 
 	// get dirnames
-	dirnames := internal.NewSet()
+	dirnames := types.NewSet()
 	for _, obj := range post_files {
 		dirnames.Add(obj.Dirname)
 	}

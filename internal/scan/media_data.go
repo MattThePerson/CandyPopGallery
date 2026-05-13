@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MattThePerson/CandyPopGallery/internal/models"
+	"github.com/MattThePerson/CandyPopGallery/internal"
 )
 
 // getMediaData
-func getMediaData(files_rel []string, base_dir string, post_id string) ([]models.MediaData, error) {
+func getMediaData(files_rel []string, base_dir string, post_id string) ([]internal.MediaData, error) {
 
-	media := []models.MediaData{}
+	media := []internal.MediaData{}
 	slices.Sort(files_rel)
 
 	for i, rel_path := range files_rel {
@@ -25,7 +25,7 @@ func getMediaData(files_rel []string, base_dir string, post_id string) ([]models
 		}
 
 		//
-		media = append(media, models.MediaData{
+		media = append(media, internal.MediaData{
 			MediaID:      post_id + "-" + strconv.Itoa(i+1),
 			ItemNum:      i + 1,
 			CreationDate: file_attr.CreationDate,
