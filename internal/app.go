@@ -14,8 +14,8 @@ import (
 )
 
 type Config struct {
-    MediaDirs       []string `yaml:"media_dirs"`
-    FilenameFormats []string `yaml:"filename_formats"`
+    MediaDirs       []string `yaml:"media_dirs"       json:"media_dirs"`
+    FilenameFormats []string `yaml:"filename_formats" json:"filename_formats"`
 }
 
 func (c Config) Validate() error {
@@ -64,7 +64,7 @@ func LoadApp(port int) (App, func()) {
 	app.DB = db
 
 	// read config.yaml
-	config, err := ReadConfig(app.AppDataDir)
+	config, err := ReadConfigFromYaml(app.AppDataDir)
 	if err != nil {
 		log.Fatal("failed to read config: ", err)
 	}
@@ -74,7 +74,7 @@ func LoadApp(port int) (App, func()) {
 }
 
 // ReadConfig reads the contents of `$AppDataDir/config.yaml` into a Config struct
-func ReadConfig(app_data_dir string) (*Config, error) {
+func ReadConfigFromYaml(app_data_dir string) (*Config, error) {
 
     // check file exists
     fn := filepath.Join(app_data_dir, "config.yaml")
@@ -93,6 +93,21 @@ func ReadConfig(app_data_dir string) (*Config, error) {
     }
 
     return &c, nil
+}
+
+func WriteConfigToYaml(c Config, app_data_dir string) error {
+
+    data, err := yaml.Marshal(&c)
+    if err != nil {
+        panic(err)
+    }
+
+    fn := filepath.Join(app_data_dir, "config.yaml")
+    if err := os.WriteFile(fn, data, 0755); err != nil {
+        panic(err)
+    }
+
+    return nil
 }
 
 func generateConfig(fn string) Config {
@@ -123,4 +138,13 @@ func generateConfig(fn string) Config {
 
 	fmt.Printf("Config saved to %s\n", fn)
 	return c
+}
+
+func GetDefaultConfig() Config {
+    return Config{
+        FilenameFormats: []string{
+            "{source}/{community}/[{date_uploaded}] {title} [{source_id:S}].{ext}",
+        },
+        MediaDirs: []string{},
+    }
 }

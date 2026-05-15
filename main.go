@@ -54,8 +54,13 @@ func main() {
     routes.IncludeApiRoutes(e, &app)
     routes.IncludeAdminRoutes(e, &app)
 
-    // Static folders
-    e.Static("/", "frontend/dist")
+    // Serve frontend with SPA fallback to index.html
+    e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+        Root:   "frontend/dist",
+        Index:  "index.html",
+        HTML5:  true,
+        Browse: false,
+    }))
 
     addr := fmt.Sprintf(":%d", *serverPort)
     e.Logger.Fatal(e.Start(addr))

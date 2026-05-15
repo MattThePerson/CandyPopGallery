@@ -13,3 +13,7 @@ func handleServerError(c echo.Context, status int, msg string, err error) error 
 	log.Printf("%s [%s] %s", server_prefix, route, err_msg)
 	return c.String(status, err_msg)
 }
+
+func handleOK(c echo.Context) error {
+    return c.JSON(200, map[string]bool{"ok": true})
+}
