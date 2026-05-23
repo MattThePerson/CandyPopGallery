@@ -2,18 +2,9 @@
 
 ## APP DATA DIR
 
-|-- `preview_media/`	// 
+|-- `preview_media/`	// video thumbnails, small image preview
 |-- `app.db`			// posts, media, interactions
 |-- `config.yaml`		// filename formats, media dirs, settings
-
-## FOLDER STRUCTURE
-
-|-- data/
-|-- frontend/
-|-- tools/ `shell scripts for running`
-|-- .gitignore
-|-- README.md
-|-- config.yaml
 
 ## API ROUTES
 

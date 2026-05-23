@@ -16,14 +16,8 @@ func main() {
     app, close_db := internal.LoadApp(-1)
     defer close_db()
 
-    config, err := internal.ReadConfig(app.AppDataDir)
-    if err != nil {
-        panic(err)
-    }
-
-    //
     // start := time.Now()
-    if err := scan.ScanMediaDirs(config.MediaDirs, config.FilenameFormats, false); err != nil {
+    if err := scan.ScanMediaDirs(app.Config.MediaDirs, app.Config.FilenameFormats, false); err != nil {
         log.Fatal(err)
     }
 

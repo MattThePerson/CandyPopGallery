@@ -12,3 +12,4 @@ config.yaml
 .old
 _test*
 demo/
+.claude/

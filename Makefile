@@ -1,7 +1,18 @@
 
+# OS dependent things
+ifeq ($(OS),Windows_NT)
+	SUFF := .exe
+	CMD_RM := rmdir /s /q
+else
+	SUFF :=
+	CMD_RM := rm -rf
+endif
+
+
+# binaries
 EXE = CandyPopGallery
-EXE_MAIN = bin/$(EXE)
-EXE_WORKER = bin/$(EXE)_worker
+EXE_MAIN = bin/$(EXE)$(SUFF)
+EXE_WORKER = bin/$(EXE)_worker$(SUFF)
 
 PORT_DEV = 8021
 PORT_PROD = 8020
@@ -19,7 +30,7 @@ build_all: build build_frontend
 build: build_main build_worker
 
 build_main:
-	go build -ldflags="-s -w" -o "$(EXE_MAIN)" .
+	go build -ldflags="-s -w" -o "$(EXE_MAIN)" ./cmd/app
 
 build_worker:
 	go build -o "$(EXE_WORKER)" ./cmd/worker
@@ -28,17 +39,16 @@ build_frontend:
 	cd frontend && npm run build
 
 run_dev:
-	go run . --dev --port $(PORT_DEV)
+	go run ./cmd/app --dev --port $(PORT_DEV)
 
 run:
-	go run .
+	go run ./cmd/app
 
 tidy:
 	go mod tidy
 
 clean:
-	rm -rf bin
+	$(CMD_RM) bin
 
 clean_frontend:
-	rm -rf frontend/dist
-
+	 -$(CMD_RM) frontend/dist

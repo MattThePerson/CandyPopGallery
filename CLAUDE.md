@@ -11,7 +11,7 @@ CandyPopGallery is a local web app for browsing media (images, GIFs, videos) dow
 ### Backend (Go)
 
 ```sh
-# Run the web server (reads config.yaml from CWD)
+# Run the web server
 go run ./cmd/app
 
 # Run with dev mode (disables browser caching for HTML/JS/CSS)
@@ -21,8 +21,8 @@ go run ./cmd/app --dev --port 8020
 go run ./cmd/worker
 
 # Build binaries
-go build -o ./bin/App ./cmd/app
-go build -o ./bin/Worker ./cmd/worker
+go build -o ./bin/CandyPopGallery ./cmd/app
+go build -o ./bin/CandyPopGallery_worker ./cmd/worker
 
 # Build (PowerShell, from project root)
 .\tools\build_and_run.ps1
@@ -32,7 +32,6 @@ go build -o ./bin/Worker ./cmd/worker
 
 ```sh
 cd frontend
-
 npm install
 npm run dev      # dev server on port 1235
 npm run build    # build to frontend/dist/ (consumed by Go server)
@@ -45,9 +44,9 @@ In production the Go server serves `frontend/dist/` as static files.
 ### Two binaries
 
 - **`cmd/app`** — Echo HTTP server (default port 8020). Serves the built frontend from `frontend/dist/` and will expose REST API routes (see `NOTES.md` for planned routes). Reads `config.yaml` at startup.
-- **`cmd/worker`** — Runs the media scan pipeline standalone (no HTTP server). Useful for bulk ingestion before starting the app.
+- **`cmd/worker`** — Runs the media scan pipeline standalone (no HTTP server). Useful for handling backend (tasks which would normally be done via frontend dashboard) in the terminal.
 
-### Config (`config.yaml`)
+### Config (`APP_DATA_DIR/CandyPopGallery/config.yaml`)
 
 Two keys:
 - `filename_formats` — ordered list of `string_parser` patterns used to extract metadata from filenames.
@@ -67,14 +66,6 @@ Three steps in `ScanMediaDirs`:
 - **`PostData`** — one record per post. `PostID = source + "-" + source_id`. Contains title, upload date, source, community, tags, likes, and a slice of `MediaData`.
 - **`MediaData`** — one record per file. `MediaID = postID + "-" + itemNum`. Stores relative path, suffix, type (`image`/`video`), and filesize.
 
-### Database (`internal/db/`)
-
-SQLite (via `modernc.org/sqlite`, WAL mode). Two helpers cover the primary pattern: serialized-JSON tables where each row is `(id TEXT, data TEXT)`. Generic functions `ReadSerializedRowFromTable[S]`, `ReadSerializedMapFromTable[S]`, and `WriteSerializedRowToTable[S]` handle marshal/unmarshal automatically. `InsertDataIntoTable` handles flat column maps.
-
-### TF-IDF (`internal/tfidf/`)
-
-`GetSimilarPost` computes post similarity by scoring shared tokens (tags). Consumes prebuilt `id→tokens` and `token→ids` maps; the generation step is triggered via an admin API route.
-
 ### Frontend (`frontend/`)
 
-_to be rewritten in React_
+Frontend written in React + tailwind + vite. While I will try to write most of the go backend stuff, Claude will handle the vast majority of writing the actual frontend, which will be done in manageable steps.

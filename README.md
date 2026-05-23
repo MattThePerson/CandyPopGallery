@@ -1,6 +1,6 @@
 # CandyPopGallery
 
-A web-based viewer for local images, GIFs and videos downloaded from Reddit, Twitter, Instagram, etc.
+A local web-based viewer for your collection of images and GIFs (also short videos!). Eg. media downloaded from Reddit, Twitter, Instagram, etc. 
 
 ## Features
 
