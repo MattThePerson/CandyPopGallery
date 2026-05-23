@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CandyPopGallery — Layout Mockup v3</title>
+<style>
+  :root {
+    --text:           #6b6375;
+    --text-h:         #08060d;
+    --bg:             #ffffff;
+    --bg2:            #f7f6f9;
+    --bg3:            #efecf4;
+    --border:         #e5e4e7;
+    --accent:         #aa3bff;
+    --accent2:        #ff6eb4;
+    --accent-bg:      rgba(170,59,255,0.09);
+    --accent-border:  rgba(170,59,255,0.35);
+    --ok:             #22c55e;
+    --warn:           #f59e0b;
+    --info:           #3b82f6;
+    --err:            #ef4444;
+    --header-h:       42px;
+    --sidebar-w:      172px;
+    font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text:           #9ca3af;
+      --text-h:         #f3f4f6;
+      --bg:             #16171d;
+      --bg2:            #1e1f28;
+      --bg3:            #252632;
+      --border:         #2e303a;
+      --accent:         #c084fc;
+      --accent2:        #f472b6;
+      --accent-bg:      rgba(192,132,252,0.13);
+      --accent-border:  rgba(192,132,252,0.40);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+
+  /* ═══════════════════════════════ HEADER ═══════════════════════════════ */
+  header {
+    height: var(--header-h);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: stretch;
+    flex-shrink: 0; background: var(--bg);
+    position: relative; z-index: 100;
+  }
+
+  /* Logo */
+  .logo-btn {
+    display: flex; align-items: center; gap: 0;
+    padding: 0 12px 0 14px;
+    background: none; border: none; cursor: pointer;
+    flex-shrink: 0; user-select: none;
+    border-radius: 0;
+  }
+  .logo-btn:hover .logo-gallery { opacity: 0.8; }
+  .logo-candypop {
+    font-size: 13px; font-weight: 700;
+    color: var(--accent); letter-spacing: -0.02em;
+  }
+  .logo-gallery {
+    font-size: 13px; font-weight: 500;
+    color: var(--text-h); letter-spacing: -0.01em;
+    opacity: 0.6;
+    margin-left: 5px;
+    transition: opacity 0.15s;
+  }
+
+  .logo-divider {
+    width: 1px; background: var(--border);
+    margin: 10px 0; flex-shrink: 0;
+  }
+
+  /* nav button shared styles */
+  .nav-btn {
+    height: 100%;
+    padding: 0 12px;
+    border: none; background: none; cursor: pointer;
+    font-size: 13px; color: var(--text);
+    border-bottom: 2px solid transparent;
+    position: relative; top: 1px;
+    transition: color 0.12s;
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+  }
+  .nav-btn:hover { color: var(--text-h); }
+  .nav-btn.active {
+    color: var(--accent); border-bottom-color: var(--accent); font-weight: 500;
+  }
+  .nav-btn .caret { font-size: 9px; opacity: 0.45; margin-left: 1px; transition: transform 0.15s; }
+  .nav-item:hover .nav-btn .caret { transform: rotate(180deg); }
+
+  /* dropdown */
+  .nav-item { position: relative; display: flex; align-items: stretch; }
+  .dropdown {
+    position: absolute; top: calc(100% + 1px); left: 0;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+    padding: 4px; min-width: 148px;
+    opacity: 0; pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.13s, transform 0.13s; z-index: 200;
+  }
+  .dropdown.align-right { left: auto; right: 0; }
+  .nav-item:hover .dropdown { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .dropdown-item {
+    display: block; width: 100%; padding: 7px 10px;
+    border: none; background: none; cursor: pointer;
+    font-size: 13px; color: var(--text);
+    text-align: left; border-radius: 5px;
+    transition: background 0.1s, color 0.1s;
+    white-space: nowrap;
+  }
+  .dropdown-item:hover { background: var(--bg2); color: var(--text-h); }
+  .dropdown-item.active { color: var(--accent); font-weight: 500; }
+
+  /* left nav */
+  .main-nav-left  { display: flex; align-items: stretch; padding: 0 4px; flex: 1; }
+  .main-nav-right { display: flex; align-items: center; gap: 4px; padding: 0 10px; flex-shrink: 0; }
+
+  /* right-side nav btn (Dashboard) — same style but on right */
+  .nav-btn-right {
+    height: 30px;
+    padding: 0 11px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: none; cursor: pointer;
+    font-size: 13px; color: var(--text);
+    display: flex; align-items: center; gap: 4px;
+    transition: color 0.12s, background 0.12s, border-color 0.12s;
+    white-space: nowrap; position: relative;
+  }
+  .nav-btn-right:hover { background: var(--bg2); color: var(--text-h); }
+  .nav-btn-right.active {
+    background: var(--accent-bg); color: var(--accent);
+    border-color: var(--accent-border); font-weight: 500;
+  }
+  .nav-btn-right .caret { font-size: 9px; opacity: 0.45; transition: transform 0.15s; }
+  .nav-item-right { position: relative; display: flex; align-items: center; }
+  .nav-item-right:hover .nav-btn-right .caret { transform: rotate(180deg); }
+  .nav-item-right:hover .dropdown { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+  /* reload + activity */
+  .reload-btn {
+    width: 30px; height: 30px;
+    border: 1px solid var(--border); background: none; cursor: pointer;
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    color: var(--text); font-size: 14px;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .reload-btn:hover { background: var(--bg2); color: var(--text-h); border-color: var(--text); }
+
+  .activity {
+    position: relative; width: 30px; height: 30px;
+    border: 1px solid var(--border); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: default; transition: background 0.12s;
+  }
+  .activity:hover { background: var(--bg2); }
+  .activity-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ok); transition: background 0.3s;
+  }
+  .activity-dot.scanning   { background: var(--info); animation: pulse 1s   ease-in-out infinite; }
+  .activity-dot.generating { background: var(--warn); animation: pulse 0.8s ease-in-out infinite; }
+  .activity-dot.error      { background: var(--err);  animation: pulse 0.5s ease-in-out infinite; }
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%     { opacity:0.45; transform:scale(0.65); }
+  }
+  .activity-tooltip {
+    position: absolute; top: calc(100% + 6px); right: 0;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    padding: 10px 12px; min-width: 200px;
+    opacity: 0; pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.13s, transform 0.13s; z-index: 200;
+    font-size: 12px; line-height: 1.6;
+  }
+  .activity:hover .activity-tooltip { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .status-line { display: flex; align-items: center; gap: 7px; color: var(--text-h); font-weight: 500; margin-bottom: 3px; }
+  .status-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex-shrink: 0; }
+
+  /* ═══════════════════════════════ BODY ═══════════════════════════════ */
+  .app-body { flex: 1; display: flex; overflow: hidden; }
+
+  /* shared sidebar */
+  .left-sidebar {
+    width: var(--sidebar-w); border-right: 1px solid var(--border);
+    background: var(--bg); flex-shrink: 0;
+    display: flex; flex-direction: column;
+    padding: 10px 8px; gap: 2px;
+  }
+  .sb-link {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 10px; border-radius: 7px;
+    border: none; background: none; cursor: pointer;
+    width: 100%; text-align: left;
+    font-size: 13px; color: var(--text);
+    transition: background 0.1s, color 0.1s;
+  }
+  .sb-link:hover { background: var(--bg2); color: var(--text-h); }
+  .sb-link.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+  .sb-link .icon { font-size: 14px; opacity: 0.6; width: 16px; text-align: center; }
+  .sb-link.active .icon { opacity: 1; }
+
+  main { flex: 1; overflow-y: auto; padding: 28px 32px; }
+
+  /* ═══════════════════════════════ PAGES ═══════════════════════════════ */
+  .page     { display: none; }
+  .page.active { display: block; }
+  .sub-page { display: none; }
+  .sub-page.active { display: block; }
+
+  .page-title { font-size: 18px; font-weight: 600; color: var(--text-h); margin-bottom: 4px; }
+  .page-desc  { font-size: 12px; color: var(--text); margin-bottom: 22px; }
+
+  /* ── Home ── */
+  .config-banner {
+    background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.35);
+    border-radius: 10px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 28px; font-size: 13px;
+  }
+  .config-banner .warn-icon { font-size: 16px; flex-shrink: 0; }
+  .config-banner p { color: var(--text); line-height: 1.5; }
+  .config-banner a { color: var(--accent); text-decoration: none; font-weight: 500; cursor: pointer; }
+  .config-banner a:hover { text-decoration: underline; }
+
+  .stats-block {
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .stat-row {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .stat-headline {
+    font-size: 28px; font-weight: 700; color: var(--text-h);
+    letter-spacing: -0.03em; line-height: 1.1;
+  }
+  .stat-headline em { color: var(--accent); font-style: normal; }
+  .stat-sub {
+    font-size: 13px; color: var(--text); line-height: 1.5;
+  }
+  .stat-sub em { color: var(--text-h); font-style: normal; font-weight: 500; }
+  .stat-chips {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px;
+  }
+  .chip {
+    padding: 4px 10px; border-radius: 20px;
+    background: var(--bg2); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text);
+  }
+  .chip em { color: var(--text-h); font-style: normal; font-weight: 500; }
+
+  /* ── Cards ── */
+  .card-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;
+  }
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; aspect-ratio: 3/4;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--border); font-size: 11px;
+  }
+  .media-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px;
+  }
+  .media-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--border);
+  }
+  .discover-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;
+  }
+  .discover-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; height: 100px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--border);
+  }
+
+  /* ── Dashboard/Library shared ── */
+  .dash-section {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; margin-bottom: 14px;
+  }
+  .dash-section h3 { font-size: 13px; font-weight: 600; color: var(--text-h); margin-bottom: 12px; }
+  .field-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .field-label { font-size: 12px; color: var(--text); width: 120px; flex-shrink: 0; }
+  .field-stub { flex:1; height:28px; border-radius:6px; background:var(--bg); border:1px solid var(--border); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 13px; border-radius: 7px; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 500;
+    background: var(--accent); color: #fff;
+  }
+  .btn.secondary {
+    background: var(--bg); color: var(--text-h); border: 1px solid var(--border);
+  }
+  .action-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+  /* log */
+  .log-area {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+    font-family: 'Cascadia Code','Fira Code',monospace;
+    font-size: 11px; color: var(--text); line-height: 1.9; min-height: 200px;
+  }
+  .log-ok   { color: var(--ok);   }
+  .log-warn { color: var(--warn); }
+  .log-err  { color: var(--err);  }
+  .log-info { color: var(--info); }
+
+  /* ── Demo bar ── */
+  .demo-bar {
+    position: fixed; bottom: 14px; right: 14px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+    font-size: 11px; z-index: 300;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .demo-bar strong { color: var(--text-h); font-size: 11px; display: block; margin-bottom: 1px; }
+  .demo-bar-row { display: flex; gap: 5px; }
+  .demo-btn {
+    padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); cursor: pointer; font-size: 11px;
+  }
+  .demo-btn:hover { background: var(--bg3); color: var(--text-h); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
+<header>
+
+  <!-- Logo -->
+  <button class="logo-btn" onclick="goMain('home')" title="Home">
+    <span class="logo-candypop">CandyPop</span>
+    <span class="logo-gallery">Gallery</span>
+  </button>
+  <div class="logo-divider"></div>
+
+  <!-- Left nav -->
+  <nav class="main-nav-left">
+
+    <div class="nav-item">
+      <button class="nav-btn active" id="nav-home" onclick="goMain('home')">Home</button>
+    </div>
+    <div class="nav-item">
+      <button class="nav-btn" id="nav-posts" onclick="goMain('posts')">Posts</button>
+    </div>
+    <div class="nav-item">
+      <button class="nav-btn" id="nav-media" onclick="goMain('media')">Media</button>
+    </div>
+    <div class="nav-item">
+      <button class="nav-btn" id="nav-discover" onclick="goMain('discover')">Discover</button>
+    </div>
+
+    <!-- Library (hover dropdown) -->
+    <div class="nav-item">
+      <button class="nav-btn" id="nav-library" onclick="goMain('library')">
+        Library <span class="caret">▾</span>
+      </button>
+      <div class="dropdown">
+        <button class="dropdown-item" id="dd-lib-favourites" onclick="goSub('library','favourites'); event.stopPropagation()">Favourites</button>
+        <button class="dropdown-item" id="dd-lib-collections" onclick="goSub('library','collections'); event.stopPropagation()">Collections</button>
+        <button class="dropdown-item" id="dd-lib-tags" onclick="goSub('library','tags'); event.stopPropagation()">Tags</button>
+        <button class="dropdown-item" id="dd-lib-comments" onclick="goSub('library','comments'); event.stopPropagation()">Comments</button>
+        <button class="dropdown-item" id="dd-lib-history" onclick="goSub('library','history'); event.stopPropagation()">View History</button>
+      </div>
+    </div>
+
+  </nav>
+
+  <!-- Right side -->
+  <div class="main-nav-right">
+    <button class="reload-btn" title="Quick scan" onclick="animateReload(this)">↺</button>
+
+    <div class="activity" id="activity">
+      <div class="activity-dot" id="activity-dot"></div>
+      <div class="activity-tooltip">
+        <div class="status-line">
+          <div class="status-dot" id="tooltip-dot"></div>
+          <span id="tooltip-status">Idle</span>
+        </div>
+        <p id="tooltip-detail">No background tasks running.</p>
+      </div>
+    </div>
+
+    <!-- Dashboard (right side, pill style) -->
+    <div class="nav-item-right">
+      <button class="nav-btn-right" id="nav-dashboard" onclick="goMain('dashboard')">
+        Dashboard <span class="caret">▾</span>
+      </button>
+      <div class="dropdown align-right">
+        <button class="dropdown-item" id="dd-dash-settings"  onclick="goSub('dashboard','settings');  event.stopPropagation()">Settings</button>
+        <button class="dropdown-item" id="dd-dash-backend"   onclick="goSub('dashboard','backend');   event.stopPropagation()">Backend</button>
+        <button class="dropdown-item" id="dd-dash-configure" onclick="goSub('dashboard','configure'); event.stopPropagation()">Configure</button>
+        <button class="dropdown-item" id="dd-dash-log"       onclick="goSub('dashboard','log');       event.stopPropagation()">Log</button>
+      </div>
+    </div>
+  </div>
+
+</header>
+
+<!-- ═══════════════════════════════ BODY ═══════════════════════════════ -->
+<div class="app-body">
+
+  <!-- Left sidebar — shown for library + dashboard -->
+  <aside class="left-sidebar" id="left-sidebar" style="display:none">
+    <!-- filled by JS -->
+  </aside>
+
+  <main>
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <!-- shown only when no config -->
+      <div class="config-banner" id="config-banner">
+        <span class="warn-icon">⚠</span>
+        <p>No media folders have been configured yet. <a onclick="goSub('dashboard','configure'); goMain('dashboard')">Go to Configure</a> to add your media directories and get started.</p>
+      </div>
+      <div class="stats-block">
+        <div class="stat-row">
+          <div class="stat-headline"><em>2,300</em> Posts</div>
+          <div class="stat-sub">from <em>8 platforms</em> and <em>69 communities</em></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-chips">
+            <div class="chip"><em>1,840</em> images</div>
+            <div class="chip"><em>312</em> GIFs</div>
+            <div class="chip"><em>148</em> videos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POSTS -->
+    <div class="page" id="page-posts">
+      <div class="page-title">Posts</div>
+      <div class="page-desc">Browse and search all posts.</div>
+      <div class="card-grid">
+        <div class="card">post</div><div class="card">post</div>
+        <div class="card">post</div><div class="card">post</div>
+        <div class="card">post</div><div class="card">post</div>
+        <div class="card">post</div><div class="card">post</div>
+        <div class="card">post</div><div class="card">post</div>
+      </div>
+    </div>
+
+    <!-- MEDIA -->
+    <div class="page" id="page-media">
+      <div class="page-title">Media</div>
+      <div class="page-desc">Browse individual media files across all posts.</div>
+      <div class="media-grid">
+        <div class="media-card">img</div><div class="media-card">img</div>
+        <div class="media-card">gif</div><div class="media-card">vid</div>
+        <div class="media-card">img</div><div class="media-card">img</div>
+        <div class="media-card">vid</div><div class="media-card">gif</div>
+        <div class="media-card">img</div><div class="media-card">img</div>
+        <div class="media-card">img</div><div class="media-card">gif</div>
+      </div>
+    </div>
+
+    <!-- DISCOVER -->
+    <div class="page" id="page-discover">
+      <div class="page-title">Discover</div>
+      <div class="page-desc">Suggested and related content based on your interactions.</div>
+      <div class="discover-grid">
+        <div class="discover-card">recommended</div>
+        <div class="discover-card">similar</div>
+        <div class="discover-card">trending tags</div>
+        <div class="discover-card">random</div>
+      </div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div class="page" id="page-library">
+      <div class="sub-page active" id="sub-library-favourites">
+        <div class="page-title">Favourites</div>
+        <div class="page-desc">Posts you've starred.</div>
+        <div class="card-grid">
+          <div class="card">post</div><div class="card">post</div>
+          <div class="card">post</div><div class="card">post</div>
+        </div>
+      </div>
+      <div class="sub-page" id="sub-library-collections">
+        <div class="page-title">Collections</div>
+        <div class="page-desc">User-created named lists of posts.</div>
+        <div class="dash-section"><h3>My Picks</h3><div style="color:var(--border);font-size:12px">4 posts</div></div>
+        <div class="dash-section"><h3>Saved for later</h3><div style="color:var(--border);font-size:12px">11 posts</div></div>
+      </div>
+      <div class="sub-page" id="sub-library-tags">
+        <div class="page-title">Tags</div>
+        <div class="page-desc">Custom tags you've applied to posts.</div>
+        <div class="dash-section"><h3>Your tags</h3>
+          <div class="stat-chips">
+            <div class="chip"><em>aesthetic</em> · 42</div>
+            <div class="chip"><em>ref</em> · 17</div>
+            <div class="chip"><em>inspo</em> · 8</div>
+          </div>
+        </div>
+      </div>
+      <div class="sub-page" id="sub-library-comments">
+        <div class="page-title">Comments</div>
+        <div class="page-desc">Notes you've left on posts.</div>
+        <div class="dash-section" style="font-size:12px;color:var(--text)">
+          <div style="margin-bottom:8px"><em style="color:var(--text-h);font-style:normal">reddit-abc123</em> — "love this palette"</div>
+          <div><em style="color:var(--text-h);font-style:normal">twitter-xyz789</em> — "great composition"</div>
+        </div>
+      </div>
+      <div class="sub-page" id="sub-library-history">
+        <div class="page-title">View History</div>
+        <div class="page-desc">Recently viewed posts.</div>
+        <div class="card-grid">
+          <div class="card">post</div><div class="card">post</div>
+          <div class="card">post</div><div class="card">post</div>
+          <div class="card">post</div><div class="card">post</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page" id="page-dashboard">
+      <div class="sub-page active" id="sub-dashboard-settings">
+        <div class="page-title">Settings</div>
+        <div class="page-desc">Frontend viewing preferences.</div>
+        <div class="dash-section">
+          <h3>Viewing</h3>
+          <div class="field-row"><div class="field-label">Default view</div><div class="field-stub"></div></div>
+          <div class="field-row"><div class="field-label">Items per page</div><div class="field-stub"></div></div>
+          <div class="field-row"><div class="field-label">Theme</div><div class="field-stub"></div></div>
+          <div class="action-row"><button class="btn">Save</button></div>
+        </div>
+      </div>
+      <div class="sub-page" id="sub-dashboard-backend">
+        <div class="page-title">Backend</div>
+        <div class="page-desc">Initiate backend tasks.</div>
+        <div class="dash-section">
+          <h3>Scan</h3>
+          <div class="action-row">
+            <button class="btn">Full scan</button>
+            <button class="btn secondary">Quick scan</button>
+            <button class="btn secondary">Filtered scan…</button>
+          </div>
+        </div>
+        <div class="dash-section">
+          <h3>Generate</h3>
+          <div class="action-row">
+            <button class="btn secondary">Preview media</button>
+            <button class="btn secondary">Histograms</button>
+            <button class="btn secondary">TF-IDF</button>
+          </div>
+        </div>
+      </div>
+      <div class="sub-page" id="sub-dashboard-configure">
+        <div class="page-title">Configure</div>
+        <div class="page-desc">Media folders and filename formats.</div>
+        <div class="dash-section">
+          <h3>Media Folders</h3>
+          <div class="field-row"><div class="field-label">Folder 1</div><div class="field-stub"></div></div>
+          <div class="field-row"><div class="field-label">Folder 2</div><div class="field-stub"></div></div>
+          <div class="action-row">
+            <button class="btn secondary">+ Add folder</button>
+            <button class="btn">Save</button>
+          </div>
+        </div>
+        <div class="dash-section">
+          <h3>Filename Formats</h3>
+          <div class="field-row"><div class="field-label">Format 1</div><div class="field-stub"></div></div>
+          <div class="field-row"><div class="field-label">Format 2</div><div class="field-stub"></div></div>
+          <div class="action-row">
+            <button class="btn secondary">+ Add format</button>
+            <button class="btn">Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="sub-page" id="sub-dashboard-log">
+        <div class="page-title">Log</div>
+        <div class="page-desc">Live backend log output.</div>
+        <div class="log-area">
+          <div><span class="log-info">[2026-05-23 12:01:05]</span> INFO  Server started on :8020</div>
+          <div><span class="log-info">[2026-05-23 12:01:06]</span> INFO  Config loaded — 2 media folders</div>
+          <div><span class="log-ok">  [2026-05-23 12:03:11]</span> OK    Quick scan complete — 0 new posts</div>
+          <div><span class="log-warn">[2026-05-23 12:04:42]</span> WARN  Skipped unrecognised file: foo_bar.mp4</div>
+          <div><span class="log-info">[2026-05-23 12:10:00]</span> INFO  Full scan started…</div>
+          <div><span class="log-info">[2026-05-23 12:10:01]</span> INFO  Walking /media/reddit …</div>
+          <div><span class="log-ok">  [2026-05-23 12:10:44]</span> OK    Full scan complete — 142 new posts</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════ DEMO CONTROLS ═══════════════════════════════ -->
+<div class="demo-bar">
+  <strong>Demo — activity state</strong>
+  <div class="demo-bar-row">
+    <button class="demo-btn" onclick="setActivity('idle')">Idle</button>
+    <button class="demo-btn" onclick="setActivity('scanning')">Scanning</button>
+    <button class="demo-btn" onclick="setActivity('generating')">Generating</button>
+    <button class="demo-btn" onclick="setActivity('error')">Error</button>
+  </div>
+  <div class="demo-bar-row">
+    <button class="demo-btn" onclick="toggleBanner()">Toggle config warn</button>
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────
+  let currentMain = 'home'
+  const currentSub = {
+    library:   'favourites',
+    dashboard: 'settings',
+  }
+  const sidebarPages = ['library', 'dashboard']
+
+  const sidebarConfig = {
+    library: [
+      { id: 'favourites', icon: '♡', label: 'Favourites' },
+      { id: 'collections',icon: '⊟', label: 'Collections' },
+      { id: 'tags',       icon: '#', label: 'Tags' },
+      { id: 'comments',   icon: '✎', label: 'Comments' },
+      { id: 'history',    icon: '◷', label: 'View History' },
+    ],
+    dashboard: [
+      { id: 'settings',  icon: '⚙', label: 'Settings'  },
+      { id: 'backend',   icon: '⚡', label: 'Backend'   },
+      { id: 'configure', icon: '⊟', label: 'Configure' },
+      { id: 'log',       icon: '≡', label: 'Log'        },
+    ],
+  }
+
+  // ── Navigation ─────────────────────────────────────────────────
+  function goMain(page) {
+    // deactivate old
+    document.getElementById(`page-${currentMain}`).classList.remove('active')
+    const oldNav = document.getElementById(`nav-${currentMain}`)
+    if (oldNav) oldNav.classList.remove('active')
+
+    currentMain = page
+
+    document.getElementById(`page-${page}`).classList.add('active')
+    const newNav = document.getElementById(`nav-${page}`)
+    if (newNav) newNav.classList.add('active')
+
+    const hasSidebar = sidebarPages.includes(page)
+    const sidebar = document.getElementById('left-sidebar')
+    sidebar.style.display = hasSidebar ? 'flex' : 'none'
+    if (hasSidebar) renderSidebar(page)
+  }
+
+  function goSub(main, sub) {
+    // if not already on this main page, switch to it first
+    if (currentMain !== main) goMain(main)
+    // deactivate old sub
+    const oldSub = document.getElementById(`sub-${main}-${currentSub[main]}`)
+    if (oldSub) oldSub.classList.remove('active')
+    const oldDd = document.getElementById(`dd-${main === 'library' ? 'lib' : 'dash'}-${currentSub[main]}`)
+    if (oldDd) oldDd.classList.remove('active')
+
+    currentSub[main] = sub
+
+    const newSub = document.getElementById(`sub-${main}-${sub}`)
+    if (newSub) newSub.classList.add('active')
+    const newDd = document.getElementById(`dd-${main === 'library' ? 'lib' : 'dash'}-${sub}`)
+    if (newDd) newDd.classList.add('active')
+
+    renderSidebar(main)
+  }
+
+  function renderSidebar(main) {
+    const sidebar = document.getElementById('left-sidebar')
+    sidebar.innerHTML = sidebarConfig[main].map(({ id, icon, label }) => {
+      const active = id === currentSub[main] ? 'active' : ''
+      return `<button class="sb-link ${active}" onclick="goSub('${main}','${id}')">
+        <span class="icon">${icon}</span> ${label}
+      </button>`
+    }).join('')
+    // sync dropdown active states
+    sidebarConfig[main].forEach(({ id }) => {
+      const prefix = main === 'library' ? 'lib' : 'dash'
+      const el = document.getElementById(`dd-${prefix}-${id}`)
+      if (el) el.classList.toggle('active', id === currentSub[main])
+    })
+  }
+
+  // ── Activity ───────────────────────────────────────────────────
+  const activityStates = {
+    idle:       { cls: '',            status: 'Idle',       detail: 'No background tasks running.',                                      dotColor: 'var(--ok)'   },
+    scanning:   { cls: 'scanning',   status: 'Scanning…',  detail: 'Full scan in progress.\n847 / 2,304 files processed.',              dotColor: 'var(--info)' },
+    generating: { cls: 'generating', status: 'Generating', detail: 'Building preview thumbnails.\n12 / 142 posts done.',               dotColor: 'var(--warn)' },
+    error:      { cls: 'error',      status: 'Error',      detail: 'Last scan failed.\nCould not read /media/instagram — permission denied.', dotColor: 'var(--err)'  },
+  }
+
+  function setActivity(state) {
+    const s = activityStates[state]
+    document.getElementById('activity-dot').className = 'activity-dot ' + s.cls
+    document.getElementById('tooltip-dot').style.background = s.dotColor
+    document.getElementById('tooltip-status').textContent = s.status
+    document.getElementById('tooltip-detail').textContent = s.detail
+  }
+
+  function animateReload(btn) {
+    btn.style.transform = 'rotate(360deg)'
+    btn.style.transition = 'transform 0.4s ease'
+    setTimeout(() => { btn.style.transform = ''; btn.style.transition = ''; }, 420)
+    setActivity('scanning')
+    setTimeout(() => setActivity('idle'), 2000)
+  }
+
+  // ── Config banner toggle (demo) ────────────────────────────────
+  function toggleBanner() {
+    const b = document.getElementById('config-banner')
+    b.style.display = b.style.display === 'none' ? 'flex' : 'none'
+  }
+</script>
+</body>
+</html>

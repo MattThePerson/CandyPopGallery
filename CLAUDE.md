@@ -68,4 +68,18 @@ Three steps in `ScanMediaDirs`:
 
 ### Frontend (`frontend/`)
 
-Frontend written in React + tailwind + vite. While I will try to write most of the go backend stuff, Claude will handle the vast majority of writing the actual frontend, which will be done in manageable steps.
+React 19 + TypeScript + Tailwind v4 + Vite. Claude writes the frontend in manageable steps; the user handles most of the Go backend.
+
+**Stack notes:** Tailwind v4 (no config file; CSS-first). CSS custom properties in `index.css` define all design tokens (`--bg`, `--bg2`, `--border`, `--accent`, `--ok`, `--warn`, etc.) for both light and dark themes. Tailwind classes reference them via `[var(--token)]` syntax.
+
+**Layout:** Fixed top header with logo (left), primary nav tabs (left), and a right-side cluster (quick-scan button, backend activity indicator, Dashboard pill). The header is the only persistent chrome — no bottom nav, no persistent sidebar. A `/setup` route handles initial configuration; the root loader redirects there if setup is incomplete.
+
+**Primary nav tabs (left of header):** Home · Posts · Media · Discover · Library. Library has a hover dropdown and, when active, a left sidebar for its subpages (Favourites, Collections, Tags, Comments, View History).
+
+**Dashboard (right of header, pill button):** Also has a hover dropdown. When active, shows a left sidebar for its subpages (Backend, Configure, Settings, Logs). Dashboard is intentionally separated from the main tabs — it's an admin/utility area, not content browsing.
+
+**Routing:** `createBrowserRouter` with nested routes. Every navigation (including sidebar subpages) pushes a history entry. Library and Dashboard subpages use a shared `SidebarLayout` component. Future search state should use `useSearchParams` to keep searches in browser history.
+
+**Home page:** Displays post/media statistics and a contextual warning banner if no media folders are configured.
+
+**Design direction:** Minimal and unobtrusive. Content should dominate; chrome should recede. The mockup in `mockups/layout.html` is the canonical visual reference for the overall layout.
