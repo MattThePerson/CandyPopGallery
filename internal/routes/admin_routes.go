@@ -10,6 +10,7 @@ import (
 //  GET         /admin/setup-complete
 //  GET|POST    /admin/config
 //  GET         /admin/config/reload            # reloads config.yaml
+//  GET         /admin/appdata-path
 //  GET         /admin/generate/preview-media
 //  GET         /admin/generate/tfidf
 func IncludeAdminRoutes(e *echo.Echo, app *internal.App) {

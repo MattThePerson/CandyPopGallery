@@ -10,7 +10,6 @@ import Home from './pages/Home'
 import Posts from './pages/Posts'
 import Media from './pages/Media'
 import Discover from './pages/Discover'
-import Setup from './pages/Setup'
 
 import Favourites  from './pages/library/Favourites'
 import Collections from './pages/library/Collections'
@@ -40,18 +39,17 @@ const DASHBOARD_LINKS = [
 
 const router = createBrowserRouter([
   {
-    path: '/setup',
-    element: <Setup />,
-  },
-  {
     path: '/',
     id: 'root',
     element: <RootLayout />,
-    loader: async () => {
+    loader: async ({ request }) => {
+      const url = new URL(request.url)
       const res = await fetch('/admin/setup-complete')
       const { done } = await res.json()
-      if (!done) return redirect('/setup')
-      return { done: true }
+      if (!done && !url.pathname.startsWith('/dashboard/configure')) {
+        return redirect('/dashboard/configure')
+      }
+      return { done }
     },
     children: [
       { index: true, element: <Home /> },
@@ -74,7 +72,7 @@ const router = createBrowserRouter([
         path: 'dashboard',
         element: <SidebarLayout links={DASHBOARD_LINKS} />,
         children: [
-          { index: true, element: <Navigate to="settings" replace /> },
+          { index: true, element: <Navigate to="configure" replace /> },
           { path: 'backend',   element: <Backend /> },
           { path: 'configure', element: <Configure /> },
           { path: 'settings',  element: <Settings /> },
